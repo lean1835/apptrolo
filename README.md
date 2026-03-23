@@ -22,5 +22,6 @@ Hướng dẫn chạy frontend(mobileapp)
 ở vs code: 
 mở terminal
 cd mobile
+npm i
 npx expo start
 (có thể click 8081 để vào hoặc dùng đt mở app expo quét mã để vào)
