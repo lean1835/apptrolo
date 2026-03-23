@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>App Trọ Lỏ Lỏ</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pr:#16a34a; --pr-d:#15803d; --pr-dd:#14532d; --pr-l:#dcfce7; --pr-ll:#f0fdf4;
+  --amber:#d97706; --amber-l:#fef3c7;
+  --rose:#e11d48; --rose-l:#ffe4e6;
+  --sky:#0284c7; --sky-l:#e0f2fe;
+  --slate:#475569; --slate-l:#f1f5f9;
+  --g1:#0f172a; --g2:#1e293b; --g3:#64748b; --g4:#94a3b8; --g5:#e2e8f0; --g6:#f8fafc;
+  --white:#fff; --bg:#f0fdf4;
+  --sh:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --sh2:0 4px 16px rgba(22,163,74,0.15);
+  --r:14px; --rsm:10px; --rxs:7px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Nunito',sans-serif;background:#0d1f12;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+
+/* PHONE SHELL */
+.phone{width:390px;height:844px;background:var(--bg);border-radius:50px;border:9px solid #0a0a0a;overflow:hidden;position:relative;display:flex;flex-direction:column;
+  box-shadow:0 0 0 1px #1a2e1a, 0 40px 100px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.06);}
+.phone::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:108px;height:28px;background:#0a0a0a;border-radius:0 0 20px 20px;z-index:999;}
+
+/* STATUS */
+.status{background:var(--white);padding:13px 22px 5px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sttime{font-size:15px;font-weight:800;color:var(--g1);}
+.sticons{display:flex;gap:5px;align-items:center;}
+
+/* SCREENS */
+.screens{flex:1;overflow:hidden;position:relative;}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.screen.active{transform:translateX(0);}
+.screen.behind{transform:translateX(-25%);}
+
+/* BOTTOM NAV */
+.bnav{background:var(--white);border-top:1px solid var(--g5);display:flex;padding:6px 0 20px;flex-shrink:0;}
+.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 0;transition:all .18s;position:relative;}
+.nbtn svg{width:22px;height:22px;stroke:var(--g4);transition:all .18s;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.nbtn .nl{font-size:10px;font-weight:700;color:var(--g4);font-family:inherit;transition:color .18s;}
+.nbtn.on svg{stroke:var(--pr);}
+.nbtn.on .nl{color:var(--pr);}
+.nbtn.on::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:3px;background:var(--pr);border-radius:0 0 3px 3px;}
+
+/* TOPBAR */
+.topbar{background:var(--white);padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);flex-shrink:0;}
+.tbback{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--g6);border-radius:11px;border:none;cursor:pointer;transition:all .15s;}
+.tbback svg{width:18px;height:18px;stroke:var(--g2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.tbback:active{background:var(--g5);}
+.tbtitle{flex:1;font-size:17px;font-weight:800;color:var(--g1);}
+.tbact{background:var(--pr);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.2px;}
+.tbact:active{background:var(--pr-d);}
+.tbact.ghost{background:transparent;color:var(--pr);border:1.5px solid var(--pr);}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+.scroll::-webkit-scrollbar{display:none;}
+
+/* CARD */
+.card{background:var(--white);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+/* ctitle defined below with flex */
+
+/* BUTTONS */
+.btn{border:none;border-radius:var(--rsm);padding:12px 16px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.1px;}
+.btn:active{transform:scale(.97);}
+.bprim{background:var(--pr);color:#fff;box-shadow:0 3px 12px rgba(22,163,74,.35);}
+.bprim:active{background:var(--pr-d);}
+.bsec{background:var(--white);color:var(--g1);border:1.5px solid var(--g5);}
+.bgreen{background:var(--pr);color:#fff;box-shadow:0 3px 12px rgba(22,163,74,.3);}
+.bgreen:active{background:var(--pr-d);}
+.brose{background:transparent;color:var(--rose);border:1.5px solid var(--rose);}
+.bsky{background:#0284c7;color:#fff;}
+.bfull{width:100%;}
+.brow{display:flex;gap:8px;}
+.brow .btn{flex:1;}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+
+/* INPUTS */
+.fg{display:flex;flex-direction:column;gap:5px;}
+.flabel{font-size:12px;font-weight:700;color:var(--g2);}
+.finput{border:1.5px solid var(--g5);border-radius:var(--rsm);padding:11px 13px;font-size:14px;font-family:inherit;color:var(--g1);background:var(--g6);outline:none;transition:all .2s;width:100%;}
+.finput:focus{border-color:var(--pr);background:#fff;box-shadow:0 0 0 3px rgba(22,163,74,.12);}
+.finput.err{border-color:var(--rose);background:var(--rose-l);}
+.finput[readonly]{background:#eee;color:var(--g4);}
+.fselect{border:1.5px solid var(--g5);border-radius:var(--rsm);padding:11px 13px;font-size:14px;font-family:inherit;color:var(--g1);background:var(--g6);outline:none;width:100%;}
+.etxt{font-size:12px;color:var(--rose);font-weight:700;margin-top:2px;display:flex;align-items:center;gap:4px;}
+
+/* SEGMENT */
+.segwrap{display:flex;background:var(--g6);border-radius:11px;padding:3px;gap:2px;}
+.seg{flex:1;border:none;background:transparent;border-radius:9px;padding:7px 4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--g4);transition:all .15s;}
+.seg.on{background:#fff;color:var(--pr);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+
+/* BADGE */
+.bdg{display:inline-flex;align-items:center;gap:3px;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.2px;}
+.bdg-pr{background:var(--pr-l);color:var(--pr-d);}
+.bdg-gray{background:var(--g6);color:var(--g3);}
+.bdg-rose{background:var(--rose-l);color:var(--rose);}
+.bdg-amber{background:var(--amber-l);color:var(--amber);}
+.bdg-sky{background:var(--sky-l);color:var(--sky);}
+
+/* DETAIL ROW */
+.drow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--g6);}
+.drow:last-child{border-bottom:none;}
+.dlbl{font-size:13px;color:var(--g3);display:flex;align-items:center;gap:5px;}
+.dlbl svg{width:13px;height:13px;flex-shrink:0;opacity:.7;}
+.ctitle{font-size:10px;font-weight:800;color:var(--g4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.ctitle svg{width:12px;height:12px;opacity:.7;flex-shrink:0;}
+.billhead svg{width:14px;height:14px;vertical-align:middle;opacity:.8;}
+.actdot svg{width:14px;height:14px;}
+.siconwrap svg{width:17px;height:17px;}
+.dval{font-size:13px;font-weight:700;color:var(--g1);text-align:right;max-width:60%;}
+.dval.rose{color:var(--rose);}
+.dval.grn{color:var(--pr);}
+
+/* SETTING */
+.sitem{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;transition:background .12s;border-bottom:1px solid var(--g6);}
+.sitem:last-child{border-bottom:none;}
+.sitem:active{background:var(--g6);}
+.siconwrap{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.siconwrap svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.sbody{flex:1;}
+.slbl{font-size:14px;font-weight:700;color:var(--g1);}
+.ssub{font-size:12px;color:var(--g3);margin-top:1px;}
+.sarr svg{width:16px;height:16px;stroke:var(--g4);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+/* TOAST */
+.toast{position:fixed;bottom:95px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--g2);color:#fff;font-size:13px;font-weight:700;padding:11px 22px;border-radius:50px;white-space:nowrap;opacity:0;transition:all .28s;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.25);letter-spacing:.1px;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* MODAL */
+.mbg{position:absolute;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;z-index:500;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(2px);}
+.mbg.open{opacity:1;pointer-events:all;}
+.msheet{background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 36px;width:100%;max-height:88%;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;gap:13px;}
+.msheet::-webkit-scrollbar{display:none;}
+.mbg.open .msheet{transform:translateY(0);}
+.mhandle{width:36px;height:4px;background:var(--g5);border-radius:2px;margin:0 auto 2px;}
+.mtitle{font-size:19px;font-weight:900;color:var(--g1);}
+
+/* HERO */
+.hero{background:linear-gradient(145deg,#166534 0%,#16a34a 60%,#22c55e 100%);padding:18px 18px 22px;flex-shrink:0;position:relative;overflow:hidden;}
+.hero::after{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.06);}
+.hero::before{content:'';position:absolute;right:40px;bottom:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.04);}
+.hlodge{font-size:12px;color:rgba(255,255,255,.75);font-weight:700;letter-spacing:.4px;text-transform:uppercase;}
+.hmonth{font-size:20px;font-weight:900;color:#fff;margin-top:3px;}
+.hamount{font-size:30px;font-weight:900;color:#fff;margin-top:10px;letter-spacing:-.5px;}
+.hlabel{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600;}
+
+/* STATS */
+.statrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.statbox{background:#fff;border-radius:var(--r);padding:12px 10px 10px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.statbox::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.statbox.grn::after{background:var(--pr);}
+.statbox.rose::after{background:var(--rose);}
+.statbox.amb::after{background:var(--amber);}
+.sval{font-size:24px;font-weight:900;color:var(--g1);}
+.slbl2{font-size:10px;color:var(--g3);font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
+.ssub2{font-size:10px;color:var(--g4);margin-top:1px;}
+
+/* ACTION CARD */
+.acard{background:#fff;border-radius:var(--r);padding:14px 15px;display:flex;align-items:center;gap:13px;cursor:pointer;box-shadow:var(--sh);transition:all .15s;}
+.acard:active{transform:scale(.98);}
+.acard-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.acard-icon svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.abody{flex:1;}
+.atitle{font-size:14px;font-weight:800;color:var(--g1);}
+.asub{font-size:12px;color:var(--g3);margin-top:1px;font-weight:600;}
+.abadge{border-radius:20px;padding:4px 11px;font-size:12px;font-weight:800;}
+
+/* ROOM GRID */
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.rcard{background:#fff;border-radius:var(--r);padding:12px;cursor:pointer;box-shadow:var(--sh);transition:all .15s;border-top:3px solid var(--g5);position:relative;}
+.rcard:active{transform:scale(.97);}
+.rcard.occ{border-top-color:var(--pr);}
+.rcard.emp{border-top-color:var(--g5);}
+.rcard.dbt{border-top-color:var(--rose);}
+.rcard.mnt{border-top-color:var(--amber);}
+.rcard-ico{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
+.rcard-ico svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.rnum{font-size:14px;font-weight:800;color:var(--g1);}
+.rname{font-size:11px;color:var(--g3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+.rprice{font-size:11px;color:var(--g2);font-weight:700;margin-top:4px;}
+.radd{background:var(--pr-ll);border-radius:var(--r);display:flex;align-items:center;justify-content:center;min-height:90px;cursor:pointer;border:2px dashed var(--pr-l);transition:all .15s;flex-direction:column;gap:5px;}
+.radd:active{background:var(--pr-l);}
+.radd svg{width:24px;height:24px;stroke:var(--pr);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.radd-txt{font-size:11px;color:var(--pr);font-weight:700;}
+
+/* DEBT CARD */
+.dcard{background:#fff;border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);border-left:3px solid var(--g5);}
+.dcard.ov{border-left-color:var(--rose);}
+.droom-lbl{font-size:14px;font-weight:900;color:var(--g1);min-width:46px;}
+.dinfo{flex:1;}
+.dtname{font-size:12px;color:var(--g2);font-weight:600;}
+.damount{font-size:14px;font-weight:900;color:var(--rose);margin-top:1px;}
+.dmeta{font-size:10px;color:var(--g4);margin-top:1px;font-weight:600;}
+.dsend{background:var(--pr);color:#fff;border:none;border-radius:8px;padding:8px 11px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;}
+.dsend:active{background:var(--pr-d);transform:scale(.95);}
+.dsent{background:var(--pr-l);color:var(--pr-d);border-radius:8px;padding:8px 11px;font-size:11px;font-weight:800;white-space:nowrap;}
+
+/* BILL */
+.billbox{background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(22,163,74,.12);}
+.billhead{background:linear-gradient(135deg,#166534,#16a34a);padding:14px 16px;color:#fff;}
+.bhlodge{font-size:15px;font-weight:900;}
+.bhroom{font-size:12px;opacity:.75;margin-top:3px;font-weight:600;}
+.bbody{padding:12px 14px;}
+.btotalbar{display:flex;justify-content:space-between;align-items:center;background:var(--pr-ll);padding:13px 14px;}
+.btlbl{font-size:13px;font-weight:800;color:var(--pr-d);}
+.btval{font-size:20px;font-weight:900;color:var(--pr-d);}
+
+/* CALC */
+.calcbox{background:linear-gradient(145deg,#166534,#16a34a);border-radius:var(--r);padding:14px;color:#fff;}
+.crow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;font-weight:600;}
+.ctotal{display:flex;justify-content:space-between;font-size:18px;font-weight:900;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.25);}
+
+/* AUTH */
+.awrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 22px 24px;background:#fff;gap:16px;overflow-y:auto;}
+.awrap::-webkit-scrollbar{display:none;}
+.alogo{width:72px;height:72px;background:linear-gradient(145deg,#166534,#16a34a);border-radius:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(22,163,74,.35);margin-top:10px;}
+.alogo svg{width:36px;height:36px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.atitle{font-size:26px;font-weight:900;color:var(--g1);}
+.asub{font-size:14px;color:var(--g3);text-align:center;margin-top:-6px;font-weight:600;}
+.aform{width:100%;display:flex;flex-direction:column;gap:12px;}
+.alink{font-size:13px;color:var(--pr);font-weight:800;cursor:pointer;text-align:center;}
+.divline{display:flex;align-items:center;gap:10px;width:100%;}
+.divline hr{flex:1;border:none;border-top:1px solid var(--g5);}
+.divline span{font-size:12px;color:var(--g4);font-weight:600;}
+
+/* SUM BAR */
+.sumbar{background:#fff;padding:10px 14px;border-bottom:1px solid var(--g5);flex-shrink:0;}
+.sbrow{display:flex;justify-content:space-between;align-items:center;padding:2px 0;}
+.sblbl{font-size:12px;color:var(--g3);font-weight:600;}
+.sbval{font-size:13px;font-weight:800;color:var(--rose);}
+
+/* TENANT HEADER */
+.tenhdr{display:flex;align-items:center;gap:13px;background:linear-gradient(145deg,#166534,#16a34a);padding:15px 16px;flex-shrink:0;color:#fff;position:relative;}
+.tenav{width:48px;height:48px;border-radius:15px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tenav svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.tenname{font-size:18px;font-weight:900;}
+.tenroom{font-size:12px;opacity:.75;margin-top:2px;font-weight:600;}
+
+/* ACTIVITY */
+.actitem{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--g6);}
+.actitem:last-child{border-bottom:none;}
+.actdot{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.actdot svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.acttxt{flex:1;font-size:12px;color:var(--g2);font-weight:600;}
+.acttime{font-size:10px;color:var(--g4);font-weight:600;}
+
+/* MISC */
+.prow{display:flex;gap:8px;}
+.prow .fg{flex:1;}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 20px;gap:14px;}
+.emptyicon{width:64px;height:64px;background:var(--pr-l);border-radius:20px;display:flex;align-items:center;justify-content:center;}
+.emptyicon svg{width:32px;height:32px;stroke:var(--pr);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.emptytxt{font-size:14px;color:var(--g3);text-align:center;font-weight:600;}
+.secrow{display:flex;justify-content:space-between;align-items:center;}
+.sectit{font-size:14px;font-weight:800;color:var(--g1);}
+.seclink{font-size:12px;color:var(--pr);font-weight:800;cursor:pointer;}
+.info-pill{background:var(--pr-l);border-radius:10px;padding:10px 13px;display:flex;gap:10px;align-items:flex-start;}
+.info-pill svg{width:16px;height:16px;stroke:var(--pr-d);fill:none;stroke-width:2;flex-shrink:0;margin-top:1px;}
+.info-pill-txt{font-size:12px;color:var(--pr-dd);font-weight:600;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="phone" id="app">
+  <div class="status">
+    <span class="sttime" id="clk">9:41</span>
+    <div class="sticons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="4" width="3" height="8" rx="1" fill="#0f172a"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" fill="#0f172a"/><rect x="9" y="0.5" width="3" height="11.5" rx="1" fill="#0f172a"/><rect x="13.5" y="0" width="2.5" height="12" rx="1" fill="#0f172a" opacity=".3"/></svg>
+      <svg width="22" height="12" viewBox="0 0 22 12" fill="none"><rect x=".5" y=".5" width="18" height="11" rx="2.5" stroke="#0f172a" stroke-width="1"/><rect x="2" y="2" width="13" height="8" rx="1.5" fill="#16a34a"/><path d="M20 4v4a2 2 0 0 0 0-4z" fill="#0f172a" opacity=".4"/></svg>
+    </div>
+  </div>
+  <div class="screens" id="screens"></div>
+  <div class="bnav" id="bnav" style="display:none">
+    <button class="nbtn" id="nb-home" onclick="App.tab('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nl">Trang chủ</span>
+    </button>
+    <button class="nbtn" id="nb-rooms" onclick="App.tab('rooms')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><rect x="9" y="11" width="6" height="11"/></svg>
+      <span class="nl">Phòng</span>
+    </button>
+    <button class="nbtn" id="nb-debt" onclick="App.tab('debt')">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span class="nl">Công nợ</span>
+    </button>
+    <button class="nbtn" id="nb-settings" onclick="App.tab('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="nl">Cài đặt</span>
+    </button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// SVG ICON LIBRARY
+var I = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  door: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3zM16 3v18"/><circle cx="14" cy="12" r="1" fill="currentColor"/></svg>',
+  money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  droplet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+  receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16l4-2 4 2 4-2 4 2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>',
+  restore: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.29"/></svg>',
+  building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="18"/><path d="M16 8h4l3 3v10h-7V8z"/><line x1="5" y1="8" x2="5" y2="8.01"/><line x1="5" y1="12" x2="5" y2="12.01"/><line x1="5" y1="16" x2="5" y2="16.01"/><line x1="11" y1="8" x2="11" y2="8.01"/><line x1="11" y1="12" x2="11" y2="12.01"/><line x1="11" y1="16" x2="11" y2="16.01"/></svg>',
+  zap2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M10.54 16.1a6 6 0 0 1 2.92 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',
+};
+
+// ── STATE ──
+var _now = new Date();
+var _cm = _now.getMonth();  // current month index
+var _cy = _now.getFullYear();
+var _prevM = _cm===0?11:_cm-1;
+var _prevY = _cm===0?_cy-1:_cy;
+
+var S = {
+  user: null,
+  lodge: { name:'Nhà trọ Hoàng Gia', address:'12 Phan Đình Phùng, P.2, Thái Nguyên', phone:'0912345678', bank:'1234567890', bankName:'MBBank' },
+  prices: { elec:3500, water:15000, wifi:100000, garbage:20000, waterMode:'meter', waterFixed:150000 },
+  rooms: [
+    {id:'P101',name:'Phòng 101',price:3500000,status:'occupied',tenant:'Lê Văn An',phone:'0901111111',checkin:'01/01/2025',people:2,ep:1820,wp:72,desc:'Điều hòa, WC riêng, ban công',contract:'monthly',contractMonths:0,contractPrepaid:0,members:[{name:'Lê Thị Hoa',phone:'0901111222',note:'Vợ'}]},
+    {id:'P102',name:'Phòng 102',price:3500000,status:'occupied',tenant:'Nguyễn Thị Bình',phone:'0902222222',checkin:'15/03/2025',people:1,ep:920,wp:38,desc:'Điều hòa',contract:'monthly',contractMonths:0,contractPrepaid:0,members:[]},
+    {id:'P103',name:'Phòng 103',price:4200000,status:'occupied',tenant:'Trần Văn Cường',phone:'0903333333',checkin:'01/06/2025',people:2,ep:1540,wp:55,desc:'View đẹp, nội thất mới',contract:'quarter',contractMonths:3,contractPrepaid:2,members:[{name:'Trần Thị Dung',phone:'0903333444',note:'Vợ'}]},
+    {id:'P104',name:'Phòng 104',price:3800000,status:'debt',tenant:'Phạm Minh Đức',phone:'0904444444',checkin:'01/08/2024',people:1,ep:640,wp:24,desc:'Tầng 2',contract:'monthly',contractMonths:0,contractPrepaid:0,members:[]},
+    {id:'P105',name:'Phòng 105',price:3500000,status:'occupied',tenant:'Hoàng Văn Em',phone:'0905555555',checkin:'01/09/2025',people:3,ep:1180,wp:48,desc:'Tủ lạnh, máy giặt',contract:'halfyear',contractMonths:6,contractPrepaid:4,members:[{name:'Hoàng Thị Fang',phone:'0905555666',note:'Vợ'},{name:'Hoàng Bé',phone:'',note:'Con nhỏ'}]},
+    {id:'P106',name:'Phòng 106',price:3500000,status:'empty',tenant:'',phone:'',checkin:'',people:0,ep:0,wp:0,desc:'Vừa sơn mới, sẵn sàng cho thuê',contract:'monthly',contractMonths:0,contractPrepaid:0,members:[]},
+    {id:'P107',name:'Phòng 107',price:4000000,status:'occupied',tenant:'Vũ Thị Giang',phone:'0907777777',checkin:'01/11/2024',people:2,ep:420,wp:18,desc:'Tầng 3, yên tĩnh',contract:'quarter',contractMonths:3,contractPrepaid:3,members:[{name:'Vũ Văn Hùng',phone:'0907777888',note:'Chồng'}]},
+    {id:'P108',name:'Phòng 108',price:3500000,status:'maintenance',tenant:'',phone:'',checkin:'',people:0,ep:0,wp:0,desc:'Đang sửa ống nước — dự kiến xong 15/'+(_cm+1>12?1:_cm+1)+'/'+_cy,contract:'monthly',contractMonths:0,contractPrepaid:0,members:[]},
+    {id:'P109',name:'Phòng 109',price:3600000,status:'occupied',tenant:'Đinh Văn Ích',phone:'0909999999',checkin:'01/02/2025',people:1,ep:760,wp:29,desc:'Phòng cuối dãy, yên tĩnh',contract:'monthly',contractMonths:0,contractPrepaid:0,members:[]},
+    {id:'P110',name:'Phòng 110',price:3500000,status:'empty',tenant:'',phone:'',checkin:'',people:0,ep:0,wp:0,desc:'',contract:'monthly',contractMonths:0,contractPrepaid:0,members:[]},
+  ],
+  meters: {
+    'P101':{elec:2045,water:81,date:new Date(_cy,_cm,3).toISOString().split('T')[0]},
+    'P102':{elec:1105,water:44,date:new Date(_cy,_cm,3).toISOString().split('T')[0]},
+    'P105':{elec:1390,water:56,date:new Date(_cy,_cm,4).toISOString().split('T')[0]},
+  },
+  bills: {},
+  debtPrev: {
+    'P104':{months:2, label:'T'+(_prevM+1)+'/'+_prevY, amount:3800000}
+  },
+  currentMonthIdx: _cm,
+  currentYear: _cy,
+  get month(){ return 'Tháng '+(this.currentMonthIdx+1)+' / '+this.currentYear; },
+  accounts: [{phone:'0912345678', password:'123456', name:'Chủ trọ', email:'chutro@gmail.com'}],
+  notifications: [
+    {id:'n_debt_104', type:'debt', msg:'P104 (Phạm Minh Đức) nợ tiền 2 tháng. Cần nhắc thanh toán ngay.', time:'Hôm nay', read:false},
+    {id:'n_remind', type:'reminder', msg:'Đã đến đầu tháng! Nhớ ghi chỉ số điện nước cho các phòng còn lại.', time:'Hôm nay', read:false},
+  ],
+  onboardingDone: true,
+  acts: [
+    {txt:'P101 · Đã ghi điện nước',time:'Hôm nay 8:00',c:'pr'},
+    {txt:'P102 · Đã ghi điện nước',time:'Hôm nay 8:15',c:'pr'},
+    {txt:'P105 · Đã ghi điện nước',time:'Hôm nay 8:30',c:'pr'},
+    {txt:'P104 · Cảnh báo nợ 2 tháng',time:'Hôm qua',c:'rose'},
+    {txt:'P107 · HĐ quý – đã trả trước 3 tháng',time:'1 tuần trước',c:'sky'},
+  ]
+};
+
+// ── HELPERS ──
+function fmt(n){return Number(n).toLocaleString('vi');}
+
+// Is meter date in a later month than billing month?
+function isLateEntry(meterDate){
+  if(!meterDate) return false;
+  var d=new Date(meterDate);
+  return (d.getMonth()!==S.currentMonthIdx || d.getFullYear()!==S.currentYear);
+}
+
+// Which bill month label to use (late = previous month)
+function billMonthLabel(meterDate){
+  if(isLateEntry(meterDate)){
+    var mn = S.currentMonthIdx===0?11:S.currentMonthIdx-1;
+    var yr = S.currentMonthIdx===0?S.currentYear-1:S.currentYear;
+    return 'Tháng '+(mn+1)+' / '+yr+' (ghi muộn)';
+  }
+  return S.month;
+}
+
+// Calc bill: supports late entry, waterMode, contract prepaid
+function calcBill(r, meterDate){
+  var m=S.meters[r.id], p=S.prices;
+  var eu=m?Math.max(0,(m.elec||0)-r.ep):0;
+  var wa=0, wu=0;
+  if(p.waterMode==='fixed'){
+    wa=p.waterFixed; wu=null; // fixed water fee
+  } else {
+    wu=m?Math.max(0,(m.water||0)-r.wp):0;
+    wa=wu*p.water;
+  }
+  var ea=eu*p.elec;
+  // Room rent: 0 if prepaid contract still covers this month
+  var roomFee = r.price;
+  if((r.contract==='quarter'||r.contract==='halfyear') && r.contractPrepaid>0){
+    roomFee=0; // already paid upfront
+  }
+  // Late entry: if meter recorded in next month, don't charge room rent again (will be reduced)
+  var late = meterDate ? isLateEntry(meterDate) : (m ? isLateEntry(m.date) : false);
+  var lateNote = late ? '(ghi muộn – áp vào T'+(S.currentMonthIdx===0?12:S.currentMonthIdx)+')' : '';
+  // Debt from previous month
+  var prevDebt = (S.debtPrev[r.id]&&!S.bills[r.id+'_debt_cleared'])?S.debtPrev[r.id].amount:0;
+  var total = roomFee+ea+wa+p.wifi+p.garbage+prevDebt;
+  return {eu:eu,wu:wu,ea:ea,wa:wa,wifi:p.wifi,garb:p.garbage,room:roomFee,origRoom:r.price,
+          prevDebt:prevDebt,total:total,late:late,lateNote:lateNote,
+          waterMode:p.waterMode,prepaid:(r.contractPrepaid>0)};
+}
+
+function debtRooms(){
+  return S.rooms.filter(function(r){return (r.status==='occupied'||r.status==='debt')&&!(S.bills[r.id]&&S.bills[r.id].collected);});
+}
+function roomBadge(r){
+  if(r.status==='empty') return '<span class="bdg bdg-gray">Trống</span>';
+  if(r.status==='maintenance') return '<span class="bdg bdg-amber">Bảo trì</span>';
+  var b=S.bills[r.id];
+  if(b&&b.collected) return '<span class="bdg bdg-pr">Đã thu</span>';
+  if(b&&b.sent) return '<span class="bdg bdg-sky">Đã gửi bill</span>';
+  if(r.status==='debt'||S.debtPrev[r.id]) return '<span class="bdg bdg-rose">Nợ tiền</span>';
+  if(r.contract==='quarter') return '<span class="bdg bdg-amber">HĐ quý</span>';
+  if(r.contract==='halfyear') return '<span class="bdg bdg-sky">HĐ 6 tháng</span>';
+  return '<span class="bdg bdg-pr">Có khách</span>';
+}
+function roomCls(r){if(r.status==='empty')return 'emp';if(r.status==='maintenance')return 'mnt';if(r.status==='debt'||S.debtPrev[r.id])return 'dbt';return 'occ';}
+function roomIconBg(r){if(r.status==='empty')return '#94a3b8';if(r.status==='debt'||S.debtPrev[r.id])return '#e11d48';return '#16a34a';}
+
+function unreadCount(){ return S.notifications.filter(function(n){return !n.read;}).length; }
+
+// ── INIT DEMO BILLS ──
+(function(){
+  var r102=S.rooms.find(function(x){return x.id==='P102';});
+  if(r102) S.bills['P102']={sent:true, date:'0'+(_cm+1>9?'':'')+(_cm+1)+'/'+(_cm<=8?'0':'')+_cy, total:calcBill(r102).total};
+  var r107=S.rooms.find(function(x){return x.id==='P107';});
+  if(r107) S.bills['P107']={sent:true, collected:true, date:'01/'+(_cm+1>9?'':'')+(_cm+1)+'/'+_cy, total:calcBill(r107).total};
+}());
+var STORE_KEY = 'apptro_v2';
+// Clear any old version data
+try{ localStorage.removeItem('apptro_v1'); }catch(e){}
+
+function saveState(){
+  try {
+    var data = {
+      lodge: S.lodge, prices: S.prices, rooms: S.rooms,
+      meters: S.meters, bills: S.bills, debtPrev: S.debtPrev,
+      accounts: S.accounts, notifications: S.notifications,
+      onboardingDone: S.onboardingDone, acts: S.acts,
+      currentMonthIdx: S.currentMonthIdx, currentYear: S.currentYear
+    };
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  } catch(e){}
+}
+
+function loadState(){
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return false; // keep built-in demo data
+    var data = JSON.parse(raw);
+    if(!data.rooms||!data.lodge) return false;
+    S.lodge = data.lodge;
+    S.prices = data.prices || S.prices;
+    S.rooms = data.rooms;
+    S.meters = data.meters || {};
+    S.bills = data.bills || {};
+    S.debtPrev = data.debtPrev || {};
+    S.accounts = data.accounts || S.accounts;
+    if(!S.accounts.find(function(a){return a.phone==='0912345678';})){
+      S.accounts.unshift({phone:'0912345678',password:'123456',name:'Chủ trọ',email:'chutro@gmail.com'});
+    }
+    S.notifications = data.notifications || [];
+    S.onboardingDone = data.onboardingDone !== undefined ? data.onboardingDone : true;
+    S.acts = data.acts || [];
+    S.currentMonthIdx = _now.getMonth();
+    S.currentYear = _now.getFullYear();
+    return true;
+  } catch(e){ return false; }
+}
+
+// Auto-save after every action (patch key functions)
+var _origSave = saveState;
+function autoSave(){ setTimeout(_origSave, 50); }
+
+// Generate end-of-month reminders based on real date
+function checkMonthlyReminders(){
+  var day = _now.getDate();
+  var daysInMonth = new Date(S.currentYear, S.currentMonthIdx+1, 0).getDate();
+  var lastFiveDays = day >= (daysInMonth - 4);
+  if(!lastFiveDays) return;
+  // Check if reminder already exists for this month
+  var key = 'remind_'+S.currentMonthIdx+'_'+S.currentYear;
+  var exists = S.notifications.some(function(n){ return n.id===key; });
+  if(exists) return;
+  var unrecorded = S.rooms.filter(function(r){
+    return (r.status==='occupied'||r.status==='debt') && !S.meters[r.id];
+  }).length;
+  if(unrecorded > 0){
+    S.notifications.unshift({
+      id: key, type:'reminder',
+      msg: 'Còn '+unrecorded+' phòng chưa ghi điện nước tháng '+S.month+'. Hãy ghi trước cuối tháng!',
+      time: 'Hôm nay', read: false
+    });
+  }
+  // Check for overdue debts
+  S.rooms.forEach(function(r){
+    if((r.status==='occupied'||r.status==='debt') && S.debtPrev[r.id]){
+      var dk = 'debt_'+r.id+'_'+S.currentMonthIdx+'_'+S.currentYear;
+      if(!S.notifications.some(function(n){return n.id===dk;})){
+        S.notifications.unshift({
+          id:dk, type:'debt',
+          msg: r.name+' ('+r.tenant+') còn nợ tiền từ tháng trước. Nhắc khách thanh toán.',
+          time: 'Hôm nay', read: false
+        });
+      }
+    }
+  });
+}
+
+function toast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2300);
+}
+function openM(id){var e=document.getElementById(id);if(e)e.classList.add('open');}
+function closeM(id){
+  var e=document.getElementById(id);
+  if(e) e.classList.remove('open');
+  if(id==='m-forgot') fpResetModal();
+}
+function bgClose(ev,id){if(ev.target===document.getElementById(id))closeM(id);}
+function ge(id){return document.getElementById(id);}
+function gv(id){var e=ge(id);return e?e.value:'';}
+
+// ── ROUTER ──
+var R={
+  stack:[],
+  push:function(id,html){
+    var el=document.createElement('div');el.className='screen';el.dataset.sid=id;el.innerHTML=html;
+    document.getElementById('screens').appendChild(el);
+    if(this.stack.length)this.stack[this.stack.length-1].el.classList.add('behind');
+    setTimeout(function(){el.classList.add('active');},10);
+    this.stack.push({id:id,el:el});
+  },
+  pop:function(){
+    if(this.stack.length<=1)return;
+    var top=this.stack.pop();top.el.classList.remove('active');
+    setTimeout(function(){top.el.remove();},320);
+    if(this.stack.length)this.stack[this.stack.length-1].el.classList.remove('behind');
+  },
+  clear:function(){this.stack.forEach(function(s){s.el.remove();});this.stack=[];},
+  go:function(id,html){this.clear();this.push(id,html);}
+};
+
+var App={
+  tab:function(name){
+    document.getElementById('bnav').style.display='flex';
+    document.querySelectorAll('.nbtn').forEach(function(b){b.classList.remove('on');});
+    var nb=document.getElementById('nb-'+name);if(nb)nb.classList.add('on');
+    R.go(name,Scr[name]());
+  },
+  back:function(){R.pop();},
+  goRoom:function(id){var r=S.rooms.find(function(x){return x.id===id;});if(r)R.push('rd',Scr.roomDetail(r));},
+  goMeter:function(id){var r=S.rooms.find(function(x){return x.id===id;});if(r)R.push('mt',Scr.meter(r));},
+  goBill:function(id){var r=S.rooms.find(function(x){return x.id===id;});if(r)R.push('bl',Scr.bill(r));}
+};
+
+// ── SCREENS ──
+var Scr={
+
+login:function(){
+  return '<div class="awrap">'+
+  '<div class="alogo">'+I.building+'</div>'+
+  '<div class="atitle">App Trọ</div>'+
+  '<div class="asub">Quản lý nhà trọ thông minh</div>'+
+  '<div class="aform">'+
+  '<div class="fg"><label class="flabel">Số điện thoại</label><input class="finput" id="lp" type="tel" placeholder="0912 345 678" value="0912345678"></div>'+
+  '<div class="fg"><label class="flabel">Mật khẩu</label><input class="finput" id="lpw" type="password" placeholder="••••••••" value="123456"></div>'+
+  '<div class="etxt" id="lerr" style="display:none">⚠️ Sai số điện thoại hoặc mật khẩu!</div>'+
+  '<button class="btn bprim bfull" onclick="doLogin()">'+I.check+' Đăng nhập</button>'+
+  '<div style="font-size:11px;color:#94a3b8;text-align:center;font-weight:600;margin-top:-4px">SĐT mẫu: 0912345678 · MK: 123456</div>'+
+  '<div class="divline"><hr><span>hoặc</span><hr></div>'+
+  '<button class="btn bsec bfull" onclick="openM(\'m-forgot\')">Quên mật khẩu?</button>'+
+  '<div class="alink" onclick="R.push(\'reg\',Scr.register())">Chưa có tài khoản? Đăng ký ngay</div>'+
+  '</div>'+
+  '<div style="flex:1"></div>'+
+  '</div>'+
+  // ── MODAL: FORGOT PASSWORD (full 3-step email flow) ──
+  '<div class="mbg" id="m-forgot" onclick="bgClose(event,\'m-forgot\')"><div class="msheet">'+
+
+  // Step 1 – enter registered email
+  '<div id="fp-s1">'+
+  '<div class="mhandle"></div>'+
+  '<div class="mtitle">Quên mật khẩu</div>'+
+  '<p style="font-size:13px;color:#64748b;font-weight:600;line-height:1.5">Nhập email đã đăng ký. Hệ thống sẽ gửi mã OTP 6 số xác nhận đến địa chỉ đó.</p>'+
+  '<div class="fg"><label class="flabel">Email đã đăng ký</label>'+
+  '<input class="finput" id="fp-em" type="email" placeholder="example@gmail.com"></div>'+
+  '<div class="etxt" id="fp-err1" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="fpStep1()">'+I.send+' Gửi mã OTP đến Email</button>'+
+  '<button class="btn bsec bfull" onclick="closeM(\'m-forgot\')">Hủy</button>'+
+  '</div>'+
+
+  // Step 2 – OTP input
+  '<div id="fp-s2" style="display:none;flex-direction:column;gap:13px">'+
+  '<div class="mhandle"></div>'+
+  '<div style="text-align:center">'+
+  '<div style="width:60px;height:60px;background:#dcfce7;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">'+
+  '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>'+
+  '</div>'+
+  '<div style="font-size:17px;font-weight:900;color:#0f172a">Kiểm tra hộp thư</div>'+
+  '<div style="font-size:13px;color:#64748b;margin-top:5px;font-weight:600">Mã OTP đã gửi đến<br><b id="fp-email-show" style="color:#15803d"></b></div>'+
+  '</div>'+
+  '<div class="fg"><label class="flabel">Nhập mã OTP (6 chữ số)</label>'+
+  '<input class="finput" id="fp-otp" type="number" placeholder="· · · · · ·" style="font-size:26px;letter-spacing:14px;text-align:center;font-weight:900" maxlength="6"></div>'+
+  '<div style="display:flex;justify-content:space-between;align-items:center">'+
+  '<span style="font-size:12px;color:#64748b;font-weight:600">Hết hạn sau: <span id="fp-timer" style="color:#e11d48;font-weight:800">05:00</span></span>'+
+  '<span style="font-size:12px;color:#16a34a;font-weight:800;cursor:pointer" onclick="fpResend()">Gửi lại mã</span>'+
+  '</div>'+
+  '<div class="etxt" id="fp-err2" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="fpStep2()">'+I.check+' Xác nhận OTP</button>'+
+  '<button class="btn bsec bfull" onclick="fpBack()">Quay lại</button>'+
+  '</div>'+
+
+  // Step 3 – new password
+  '<div id="fp-s3" style="display:none;flex-direction:column;gap:13px">'+
+  '<div class="mhandle"></div>'+
+  '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">'+
+  '<div style="width:32px;height:32px;background:#16a34a;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+
+  '</div>'+
+  '<div style="font-size:13px;font-weight:800;color:#15803d">Email đã xác minh thành công</div>'+
+  '</div>'+
+  '<div class="mtitle" style="font-size:17px">Đặt mật khẩu mới</div>'+
+  '<div class="fg"><label class="flabel">Mật khẩu mới</label>'+
+  '<input class="finput" id="fp-npw" type="password" placeholder="Ít nhất 6 ký tự"></div>'+
+  '<div class="fg"><label class="flabel">Nhập lại mật khẩu mới</label>'+
+  '<input class="finput" id="fp-npw2" type="password" placeholder="Xác nhận"></div>'+
+  '<div class="etxt" id="fp-err3" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="fpStep3()">'+I.lock+' Lưu mật khẩu mới</button>'+
+  '</div>'+
+
+  '</div></div>';
+},
+
+register:function(){
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Đăng ký tài khoản</span></div>'+
+  '<div class="scroll">'+
+  '<div class="card"><div class="ctitle">Thông tin cá nhân</div>'+
+  '<div style="display:flex;flex-direction:column;gap:10px">'+
+  '<div class="fg"><label class="flabel">Họ và tên *</label><input class="finput" id="rn" placeholder="Nguyễn Văn A"></div>'+
+  '<div class="fg"><label class="flabel">Số điện thoại *</label><input class="finput" id="rph" type="tel" placeholder="0912 345 678"></div>'+
+  '<div class="fg"><label class="flabel">Email *</label><input class="finput" id="rem" type="email" placeholder="example@gmail.com"><div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600">Dùng để xác nhận đổi mật khẩu</div></div>'+
+  '<div class="fg"><label class="flabel">Mật khẩu *</label><input class="finput" id="rpw" type="password" placeholder="Ít nhất 6 ký tự"></div>'+
+  '<div class="fg"><label class="flabel">Nhập lại mật khẩu *</label><input class="finput" id="rpw2" type="password" placeholder="Xác nhận mật khẩu"></div>'+
+  '</div></div>'+
+  '<div class="card"><div class="ctitle">Thông tin nhà trọ</div>'+
+  '<div style="display:flex;flex-direction:column;gap:10px">'+
+  '<div class="fg"><label class="flabel">Tên nhà trọ *</label><input class="finput" id="rl" placeholder="Nhà trọ Bay Lắc"></div>'+
+  '<div class="fg"><label class="flabel">Địa chỉ</label><input class="finput" id="ra" placeholder="Số nhà, đường, phường..."></div>'+
+  '</div></div>'+
+  '<div class="etxt" id="rerr" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="doRegister()">Đăng ký ngay</button>'+
+  '<div class="alink" onclick="App.back()">Đã có tài khoản? Đăng nhập</div>'+
+  '</div>';
+},
+
+home:function(){
+  var occ=S.rooms.filter(function(r){return r.status!=='empty'&&r.status!=='maintenance';}).length;
+  var emp=S.rooms.filter(function(r){return r.status==='empty';}).length;
+  var unc=debtRooms().length;
+  var rev=S.rooms.reduce(function(s,r){var b=S.bills[r.id];return s+(b&&b.collected?b.total:0);},0);
+  var pm=S.rooms.filter(function(r){return (r.status==='occupied'||r.status==='debt')&&!S.meters[r.id];}).length;
+  var ub=unreadCount();
+  var debtPrevRooms=S.rooms.filter(function(r){return S.debtPrev[r.id];});
+  var hasMeter=S.rooms.filter(function(r){return (r.status==='occupied'||r.status==='debt')&&S.meters[r.id];});
+  var unsentBill=hasMeter.filter(function(r){return !S.bills[r.id]||!S.bills[r.id].sent;}).length;
+  var uncollected=debtRooms().filter(function(r){var b=S.bills[r.id];return b&&b.sent&&!b.collected;}).length;
+  return '<div class="hero" style="position:relative">'+
+  '<div style="position:absolute;top:14px;right:14px;cursor:pointer;z-index:2" onclick="R.push(\'notif\',Scr.notifications())">'+
+  '<div style="width:38px;height:38px;background:rgba(255,255,255,.18);border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative">'+
+  I.bell+
+  (ub>0?'<div style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#ef4444;border-radius:50%;font-size:10px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid #15803d">'+ub+'</div>':'')+
+  '</div></div>'+
+  '<div class="hlodge">'+S.lodge.name+'</div>'+
+  '<div class="hmonth">'+S.month+'</div>'+
+  '<div class="hamount">'+fmt(rev)+' đ</div>'+
+  '<div class="hlabel">Tổng đã thu tháng này</div>'+
+  '</div>'+
+  '<div class="scroll">'+
+  (!S.onboardingDone?
+  '<div style="background:linear-gradient(135deg,#0f4c27,#16a34a);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;cursor:pointer" onclick="R.push(\'onboard\',Scr.onboarding())">'+
+  '<div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+I.info+'</div>'+
+  '<div style="flex:1"><div style="font-size:14px;font-weight:800;color:#fff">Hướng dẫn sử dụng</div>'+
+  '<div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;font-weight:600">Bạn mới? Xem hướng dẫn nhanh để bắt đầu →</div></div>'+
+  '</div>':'') +
+  (debtPrevRooms.length>0?
+  '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:14px;padding:12px 14px">'+
+  '<div style="font-size:11px;font-weight:800;color:#c2410c;margin-bottom:8px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.5px">'+
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c2410c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+
+  'Nợ tháng trước ('+debtPrevRooms.length+' phòng)'+
+  '</div>'+
+  debtPrevRooms.map(function(r){
+    var d=S.debtPrev[r.id];
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid #fed7aa">'+
+    '<div><div style="font-size:13px;font-weight:700;color:#1e293b">'+r.name+' · '+r.tenant+'</div>'+
+    '<div style="font-size:11px;color:#92400e;font-weight:600">'+d.label+'</div></div>'+
+    '<div style="font-size:13px;font-weight:800;color:#c2410c">'+fmt(d.amount)+' đ</div></div>';
+  }).join('')+
+  '</div>':'') +
+  '<div class="statrow">'+
+  '<div class="statbox grn"><div class="sval">'+occ+'</div><div class="slbl2">Có khách</div><div class="ssub2">/'+S.rooms.length+' phòng</div></div>'+
+  '<div class="statbox rose"><div class="sval">'+unc+'</div><div class="slbl2">Chưa thu</div><div class="ssub2">phòng</div></div>'+
+  '<div class="statbox amb"><div class="sval">'+emp+'</div><div class="slbl2">Trống</div><div class="ssub2">phòng</div></div>'+
+  '</div>'+
+  '<div style="display:flex;flex-direction:column;gap:9px">'+
+  mkACard(I.bolt,'#16a34a','Ghi chỉ số điện nước',
+    pm>0?(pm+' phòng chưa ghi tháng này'):'Tất cả đã ghi ✓',
+    pm+' phòng','#dcfce7','#15803d',"App.tab('rooms')")+
+  mkACard(I.send,'#0284c7','Gửi hóa đơn',
+    unsentBill>0?(unsentBill+' phòng chưa gửi bill'):'Đã gửi hết ✓',
+    unsentBill+' phòng','#e0f2fe','#075985',"App.tab('debt')")+
+  mkACard(I.money,'#d97706','Thu tiền',
+    uncollected>0?(uncollected+' phòng đã gửi, chờ thu'):unc>0?(unc+' phòng chưa có hóa đơn'):'Đã thu hết tháng này ✓',
+    (uncollected>0?uncollected:unc)+' phòng','#fef3c7','#92400e',"App.tab('debt')")+
+  '</div>'+
+  '<div class="card">'+
+  '<div class="secrow" style="margin-bottom:11px"><span class="sectit">Hoạt động gần đây</span></div>'+
+  S.acts.map(function(a){
+    var bg=a.c==='pr'?'#dcfce7':a.c==='rose'?'#ffe4e6':'#e0f2fe';
+    var ic=a.c==='pr'?I.check:a.c==='rose'?I.bell:I.send;
+    var sc=a.c==='pr'?'#16a34a':a.c==='rose'?'#e11d48':'#0284c7';
+    return '<div class="actitem"><div class="actdot" style="background:'+bg+';color:'+sc+'">'+ic+'</div><div class="acttxt">'+a.txt+'</div><div class="acttime">'+a.time+'</div></div>';
+  }).join('')+
+  '</div>'+
+  '</div>';
+},
+
+rooms:function(){
+  return '<div class="topbar"><span class="tbtitle">Danh sách phòng</span></div>'+
+  '<div style="padding:8px 13px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;gap:8px;flex-shrink:0">'+
+  '<input class="finput" id="rsrch" placeholder="Tìm phòng, tên khách..." style="flex:1" oninput="filterRooms()">'+
+  '<select class="fselect" id="rfil" onchange="filterRooms()" style="width:auto">'+
+  '<option value="all">Tất cả</option><option value="occupied">Có khách</option>'+
+  '<option value="empty">Trống</option><option value="debt">Nợ tiền</option>'+
+  '</select></div>'+
+  '<div class="scroll" id="rscr">'+renderGrid(S.rooms)+'</div>'+
+  '<div class="mbg" id="m-ar" onclick="bgClose(event,\'m-ar\')"><div class="msheet">'+
+  '<div class="mhandle"></div><div class="mtitle">Thêm phòng mới</div>'+
+  '<div class="fg"><label class="flabel">Tên phòng *</label><input class="finput" id="ar-n" placeholder="Phòng 109"></div>'+
+  '<div class="fg"><label class="flabel">Giá thuê (đ/tháng) *</label><input class="finput" id="ar-p" type="number" placeholder="3500000"></div>'+
+  '<div class="fg"><label class="flabel">Mô tả / Tiện ích</label><input class="finput" id="ar-d" placeholder="Điều hòa, WC riêng..."></div>'+
+  '<div class="etxt" id="ar-err" style="display:none"></div>'+
+  '<div class="brow"><button class="btn bsec" onclick="closeM(\'m-ar\')">Hủy</button><button class="btn bprim" onclick="doAddRoom()">'+I.check+' Lưu</button></div>'+
+  '</div></div>';
+},
+
+roomDetail:function(r){
+  var m=S.meters[r.id], b=S.bills[r.id], id=r.id;
+  return '<div class="topbar" style="background:linear-gradient(135deg,#166534,#16a34a);box-shadow:none">'+
+  '<button class="tbback" onclick="App.back()" style="background:rgba(255,255,255,.18);border:none"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
+  '<span class="tbtitle" style="color:#fff">'+r.name+'</span>'+
+  '<button onclick="openM(\'m-er-'+id+'\')" style="background:rgba(255,255,255,.18);border:none;border-radius:9px;padding:6px 10px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px">'+I.edit+' Sửa</button>'+
+  '</div>'+
+  '<div class="scroll">'+
+  (r.status==='empty'?
+  '<div class="card"><div class="ctitle">Thông tin phòng</div>'+
+  '<div class="drow"><span class="dlbl">'+I.building+' Tên phòng</span><span class="dval">'+r.name+'</span></div>'+
+  '<div class="drow"><span class="dlbl">'+I.money+' Giá thuê</span><span class="dval rose">'+fmt(r.price)+' đ/th</span></div>'+
+  '<div class="drow"><span class="dlbl">Trạng thái</span><span class="dval">Đang trống</span></div>'+
+  (r.desc?'<div class="drow"><span class="dlbl">Mô tả</span><span class="dval">'+r.desc+'</span></div>':'')+
+  '</div>'+
+  '<button class="btn bprim bfull" onclick="openM(\'m-at-'+id+'\')">'+I.plus+' Thêm khách thuê</button>'
+  :
+  // ── NGƯỜI THUÊ CHÍNH ──
+  '<div class="card">'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+  '<div class="ctitle" style="margin-bottom:0">Người thuê chính</div>'+
+  '<button onclick="openM(\'m-et-'+id+'\')" style="border:none;background:#f0fdf4;color:#16a34a;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit">'+I.edit+' Sửa</button>'+
+  '</div>'+
+  '<div style="display:flex;align-items:center;gap:12px">'+
+  '<div style="width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#166534,#16a34a);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+I.user+'</div>'+
+  '<div style="flex:1">'+
+  '<div style="font-size:15px;font-weight:800;color:#0f172a">'+r.tenant+'</div>'+
+  '<div style="font-size:12px;color:#64748b;font-weight:600;margin-top:2px">📞 '+r.phone+'</div>'+
+  '<div style="font-size:11px;color:#94a3b8;margin-top:2px;font-weight:600">Ngày vào: '+r.checkin+' &nbsp;·&nbsp; '+fmt(r.price)+' đ/th</div>'+
+  (r.contract&&r.contract!=='monthly'?
+  '<div style="margin-top:4px"><span style="background:'+(r.contract==='quarter'?'#fef3c7':'#e0f2fe')+';color:'+(r.contract==='quarter'?'#92400e':'#075985')+';border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800">'+
+  (r.contract==='quarter'?'HĐ quý':'HĐ 6 tháng')+
+  (r.contractPrepaid>0?' · Đã trả trước '+r.contractPrepaid+' tháng':'')+
+  '</span></div>':'')+
+  '</div>'+
+  '</div>'+
+  '</div>'+
+  // ── NGƯỜI Ở CÙNG ──
+  '<div class="card">'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+  '<div class="ctitle" style="margin-bottom:0">'+I.people+' Người ở cùng &nbsp;<span style="background:#e0f2fe;color:#0284c7;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:800">'+((r.members&&r.members.length)||0)+' người</span></div>'+
+  '<button onclick="openM(\'m-am-'+id+'\')" style="border:none;background:#f0fdf4;color:#16a34a;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit">'+I.plus+' Thêm</button>'+
+  '</div>'+
+  ((r.members&&r.members.length>0)?
+  r.members.map(function(mb,idx){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #f1f5f9">'+
+    '<div style="width:36px;height:36px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#0284c7">'+I.user+'</div>'+
+    '<div style="flex:1;min-width:0">'+
+    '<div style="font-size:13px;font-weight:700;color:#0f172a">'+mb.name+'</div>'+
+    '<div style="font-size:11px;color:#64748b;font-weight:600;margin-top:1px">'+
+    (mb.phone?'📞 '+mb.phone:'Không có SĐT')+
+    (mb.note?' &nbsp;·&nbsp; <span style="color:#d97706;font-weight:700">'+mb.note+'</span>':'')+
+    '</div>'+
+    '</div>'+
+    '<button onclick="removeMember(\''+id+'\','+idx+')" style="background:none;border:none;cursor:pointer;padding:6px;color:#e11d48;display:flex;align-items:center;border-radius:8px;transition:background .15s" onmouseover="this.style.background=\'#ffe4e6\'" onmouseout="this.style.background=\'none\'">'+
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'+
+    '</button>'+
+    '</div>';
+  }).join('')
+  :
+  '<div style="display:flex;flex-direction:column;align-items:center;padding:14px 0 6px;gap:6px">'+
+  '<div style="font-size:28px;opacity:.25">'+I.people+'</div>'+
+  '<div style="font-size:12px;color:#94a3b8;font-weight:600">Chưa có người ở cùng</div>'+
+  '</div>'
+  )+
+  '</div>'+
+  // ── ĐIỆN NƯỚC ──
+  '<div class="card"><div class="ctitle">Điện nước '+S.month+'</div>'+
+  '<div class="drow"><span class="dlbl">'+I.bolt+' Điện kỳ trước</span><span class="dval">'+r.ep+' kWh</span></div>'+
+  '<div class="drow"><span class="dlbl">'+I.bolt+' Điện kỳ này</span><span class="dval '+(m?'grn':'rose')+'">'+(m?m.elec+' kWh':'Chưa ghi')+'</span></div>'+
+  '<div class="drow"><span class="dlbl">'+I.droplet+' Nước kỳ trước</span><span class="dval">'+r.wp+' m³</span></div>'+
+  '<div class="drow"><span class="dlbl">'+I.droplet+' Nước kỳ này</span><span class="dval '+(m?'grn':'rose')+'">'+(m?m.water+' m³':'Chưa ghi')+'</span></div>'+
+  '</div>'+
+  (b?'<div class="card"><div class="ctitle">Hóa đơn '+S.month+'</div>'+
+  '<div class="drow"><span class="dlbl">'+I.receipt+' Tổng tiền</span><span class="dval rose">'+fmt(b.total)+' đ</span></div>'+
+  '<div class="drow"><span class="dlbl">Trạng thái</span><span class="dval">'+(b.collected?'Đã thu':b.sent?'Đã gửi':'Chưa gửi')+'</span></div></div>':'')+
+  '<div class="brow">'+
+  '<button class="btn bprim" onclick="App.goMeter(\''+id+'\')">'+I.bolt+' Ghi điện nước</button>'+
+  '<button class="btn bgreen" onclick="App.goBill(\''+id+'\')">'+I.receipt+' Hóa đơn</button>'+
+  '</div>'+
+  '<button class="btn brose bfull" onclick="openM(\'m-co-'+id+'\')">'+I.trash+' Trả phòng</button>'
+  )+
+  '</div>'+
+  mkEditModal(r)+mkTenantModal(r)+mkEditTenantModal(r)+mkCoModal(r)+mkAddMemberModal(r);
+},
+
+meter:function(r){
+  var m=S.meters[r.id]||{}, id=r.id, ep=r.ep, wp=r.wp, rp=r.price;
+  var today=new Date().toISOString().split('T')[0];
+  var isFixedWater=(S.prices.waterMode==='fixed');
+  // Check if date is late (different month)
+  var prevBillMonth = S.currentMonthIdx===0?'Tháng 12 / '+(S.currentYear-1):'Tháng '+S.currentMonthIdx+' / '+S.currentYear;
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Ghi điện nước · '+r.name+'</span></div>'+
+  '<div class="scroll">'+
+  '<div class="card" style="background:#f0fdf4;border-left:3px solid #16a34a">'+
+  '<div style="font-size:13px;color:#15803d;font-weight:800;display:flex;align-items:center;gap:6px">'+I.user+' '+r.tenant+'</div>'+
+  '<div style="font-size:12px;color:#64748b;margin-top:3px;font-weight:600">'+r.name+' · '+S.month+'</div>'+
+  '</div>'+
+  // Late entry notice
+  '<div id="late-notice" class="info-pill" style="display:none">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+
+  '<div class="info-pill-txt" style="color:#92400e">Ghi muộn! Hóa đơn này sẽ tính vào <b id="late-month-lbl">'+prevBillMonth+'</b> (tháng trước). Tháng sau tiền điện nước sẽ giảm tương ứng.</div>'+
+  '</div>'+
+  '<div class="card"><div class="ctitle">'+I.bolt+' Chỉ số điện</div>'+
+  '<div class="prow" style="margin-bottom:8px">'+
+  '<div class="fg"><label class="flabel">Kỳ trước (kWh)</label><input class="finput" value="'+ep+'" readonly></div>'+
+  '<div class="fg"><label class="flabel">Kỳ này (kWh) *</label><input class="finput" id="me" type="number" placeholder="Số mới" value="'+(m.elec||'')+'" oninput="prevM('+ep+','+wp+','+rp+')"></div>'+
+  '</div>'+
+  '<div id="ei" style="font-size:12px;color:#16a34a;font-weight:700;display:none"></div>'+
+  '<div class="etxt" id="ee" style="display:none"></div>'+
+  '</div>'+
+  (isFixedWater?
+  '<div class="card" style="background:#f0fdf4;border-left:3px solid #0284c7">'+
+  '<div class="ctitle">'+I.droplet+' Tiền nước (cố định)</div>'+
+  '<div style="font-size:16px;font-weight:800;color:#0f172a">'+fmt(S.prices.waterFixed)+' đ / tháng</div>'+
+  '<div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600">Không theo công tơ · Thay đổi trong Cài đặt → Đơn giá</div>'+
+  '</div>'
+  :
+  '<div class="card"><div class="ctitle">'+I.droplet+' Chỉ số nước</div>'+
+  '<div class="prow" style="margin-bottom:8px">'+
+  '<div class="fg"><label class="flabel">Kỳ trước (m³)</label><input class="finput" value="'+wp+'" readonly></div>'+
+  '<div class="fg"><label class="flabel">Kỳ này (m³) *</label><input class="finput" id="mw" type="number" placeholder="Số mới" value="'+(m.water||'')+'" oninput="prevM('+ep+','+wp+','+rp+')"></div>'+
+  '</div>'+
+  '<div id="wi" style="font-size:12px;color:#16a34a;font-weight:700;display:none"></div>'+
+  '<div class="etxt" id="we" style="display:none"></div>'+
+  '</div>'
+  )+
+  '<div class="card"><div class="ctitle">Ngày ghi</div>'+
+  '<input class="finput" id="md" type="date" value="'+today+'" onchange="checkLateEntry(this.value)">'+
+  '<div style="font-size:11px;color:#64748b;margin-top:5px;font-weight:600">Nếu ghi muộn (sang tháng mới), hóa đơn tháng trước sẽ được tạo.</div>'+
+  '</div>'+
+  '<div id="cprev" style="display:none">'+
+  '<div class="calcbox">'+
+  '<div class="crow"><span>Tiền điện</span><span id="cp-e">—</span></div>'+
+  '<div class="crow"><span>Tiền nước</span><span id="cp-w">—</span></div>'+
+  (r.contract!=='monthly'&&r.contractPrepaid>0?
+  '<div class="crow"><span>Tiền phòng</span><span style="text-decoration:line-through;opacity:.6">'+fmt(rp)+' đ</span></div>'+
+  '<div class="crow"><span style="font-size:11px;opacity:.8">Hợp đồng trả trước</span><span style="font-size:11px">0 đ</span></div>'
+  :'<div class="crow"><span>Tiền phòng</span><span>'+fmt(rp)+' đ</span></div>')+
+  '<div class="crow"><span>Wifi + Rác</span><span>'+fmt(S.prices.wifi+S.prices.garbage)+' đ</span></div>'+
+  (S.debtPrev[id]?'<div class="crow" style="border-top:1px solid rgba(255,255,255,.2);padding-top:4px"><span>Nợ tháng trước</span><span>'+fmt(S.debtPrev[id].amount)+' đ</span></div>':'')+
+  '<div class="ctotal"><span>Ước tính</span><span id="cp-t">—</span></div>'+
+  '</div></div>'+
+  '<div class="brow">'+
+  '<button class="btn bsec" onclick="prevM('+ep+','+wp+','+rp+')">Tính thử</button>'+
+  '<button class="btn bprim" onclick="saveMeter(\''+id+'\','+ep+','+wp+')">'+I.check+' Lưu</button>'+
+  '</div>'+
+  '<button class="btn bgreen bfull" onclick="saveMeterBill(\''+id+'\','+ep+','+wp+')">'+I.receipt+' Lưu &amp; Tạo hóa đơn ngay</button>'+
+  '</div>';
+},
+
+bill:function(r){
+  var dc=calcBill(r), b=S.bills[r.id]||{}, id=r.id;
+  var m=S.meters[r.id];
+  var billLbl = m ? billMonthLabel(m.date) : S.month;
+  var nd=new Date();nd.setMonth(nd.getMonth()+1);
+  var dl='05/'+(nd.getMonth()+1)+'/'+nd.getFullYear();
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Hóa đơn · '+r.name+'</span></div>'+
+  '<div class="scroll">'+
+  (dc.late?'<div class="info-pill" style="background:#fff7ed;border:1.5px solid #fed7aa">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+
+  '<div class="info-pill-txt" style="color:#92400e">Ghi muộn — hóa đơn tháng trước. Tháng này tiền điện nước sẽ giảm.</div></div>':'') +
+  (dc.prepaid?'<div class="info-pill">'+I.info+'<div class="info-pill-txt">Hợp đồng trả trước ('+
+  (r.contract==='quarter'?'theo quý':'6 tháng')+') — tiền phòng đã được thanh toán. Chỉ tính điện, nước và phí dịch vụ.</div></div>':'') +
+  '<div class="billbox">'+
+  '<div class="billhead"><div class="bhlodge">'+I.building+' '+S.lodge.name+'</div><div class="bhroom">'+r.name+' · '+billLbl+'</div></div>'+
+  '<div class="bbody">'+
+  '<div class="drow"><span class="dlbl">'+I.user+' Khách thuê</span><span class="dval">'+r.tenant+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Điện thoại</span><span class="dval">'+r.phone+'</span></div>'+
+  (m?'<div class="drow"><span class="dlbl">Ngày ghi</span><span class="dval">'+(m.date||'')+'</span></div>':'')+
+  (!dc.prepaid?'<div class="drow"><span class="dlbl">'+I.building+' Tiền phòng</span><span class="dval">'+fmt(dc.room)+' đ</span></div>':
+  '<div class="drow"><span class="dlbl">'+I.building+' Tiền phòng</span><span class="dval" style="text-decoration:line-through;color:#94a3b8">'+fmt(dc.origRoom)+' đ</span></div>'+
+  '<div class="drow"><span class="dlbl" style="font-size:11px">→ Hợp đồng trả trước</span><span class="dval grn">0 đ</span></div>')+
+  '<div class="drow"><span class="dlbl">'+I.bolt+' Điện ('+dc.eu+' kWh × '+fmt(S.prices.elec)+')</span><span class="dval">'+fmt(dc.ea)+' đ</span></div>'+
+  (S.prices.waterMode==='fixed'?
+  '<div class="drow"><span class="dlbl">'+I.droplet+' Nước (cố định)</span><span class="dval">'+fmt(S.prices.waterFixed)+' đ</span></div>'
+  :'<div class="drow"><span class="dlbl">'+I.droplet+' Nước ('+dc.wu+' m³ × '+fmt(S.prices.water)+')</span><span class="dval">'+fmt(dc.wa)+' đ</span></div>')+
+  '<div class="drow"><span class="dlbl">'+I.wifi+' Wifi</span><span class="dval">'+fmt(dc.wifi)+' đ</span></div>'+
+  '<div class="drow"><span class="dlbl">Rác</span><span class="dval">'+fmt(dc.garb)+' đ</span></div>'+
+  (dc.prevDebt>0?'<div class="drow" style="background:#fff7ed;margin:0 -2px;padding:6px 2px"><span class="dlbl" style="color:#c2410c;font-weight:700">Nợ tháng trước</span><span class="dval rose">+'+fmt(dc.prevDebt)+' đ</span></div>':'')+
+  '</div>'+
+  '<div class="btotalbar"><span class="btlbl">TỔNG TIỀN</span><span class="btval">'+fmt(dc.total)+' đ</span></div>'+
+  '</div>'+
+  // ── TỔNG TIỀN NỔI BẬT ──
+  '<div style="background:linear-gradient(135deg,#166534,#16a34a);border-radius:14px;padding:16px;display:flex;justify-content:space-between;align-items:center">'+
+  '<div>'+
+  '<div style="font-size:11px;color:rgba(255,255,255,.7);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Tổng cần thanh toán</div>'+
+  '<div style="font-size:28px;font-weight:900;color:#fff;margin-top:4px;letter-spacing:-1px">'+fmt(dc.total)+' đ</div>'+
+  '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:3px;font-weight:600">Hạn: '+dl+'</div>'+
+  '</div>'+
+  '<div style="width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center">'+
+  I.money+
+  '</div>'+
+  '</div>'+
+  // ── QR THANH TOÁN ──
+  '<div class="card" style="text-align:center">'+
+  '<div class="ctitle" style="justify-content:center;margin-bottom:12px">Quét QR để thanh toán</div>'+
+  '<div style="display:inline-block;padding:10px;background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.08)" id="qr-wrap-'+id+'">'+
+  '<img id="qr-img-'+id+'" src="https://img.vietqr.io/image/'+
+    S.lodge.bankName.replace(/\s+/g,'')+'-'+
+    S.lodge.bank.replace(/\s+/g,'')+
+    '-compact2.png?amount='+dc.total+
+    '&addInfo='+encodeURIComponent(r.name+' '+billLbl)+
+    '&accountName='+encodeURIComponent(S.lodge.name)+
+  '" width="160" height="160" style="display:block;border-radius:8px" onerror="qrError(\''+id+'\')">'+
+  '</div>'+
+  '<div style="margin-top:10px;font-size:12px;color:#64748b;font-weight:600">'+S.lodge.bankName+' · '+S.lodge.bank+'</div>'+
+  '<div style="font-size:11px;color:#94a3b8;margin-top:2px;font-weight:600">'+S.lodge.name+'</div>'+
+  '</div>'+
+  // ── THÔNG TIN THANH TOÁN ──
+  '<div class="card"><div class="ctitle">Thông tin chuyển khoản</div>'+
+  '<div class="drow"><span class="dlbl">STK</span><span class="dval" style="font-weight:900;font-size:15px;color:#0f172a">'+S.lodge.bank+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Ngân hàng</span><span class="dval">'+S.lodge.bankName+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Chủ tài khoản</span><span class="dval">'+S.lodge.name+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Nội dung CK</span><span class="dval" style="color:#16a34a;font-weight:700">'+r.name+' '+billLbl+'</span></div>'+
+  '</div>'+
+  '<div id="bst-'+id+'" class="card" style="background:'+(b.collected?'#f0fdf4':b.sent?'#e0f2fe':'transparent')+';display:'+(b.sent||b.collected?'block':'none')+'">'+
+  '<div style="font-size:14px;font-weight:800;color:'+(b.collected?'#15803d':'#075985')+'">'+(b.collected?'Đã thu tiền':'Đã gửi hóa đơn')+'</div>'+
+  (b.date?'<div style="font-size:12px;color:#64748b;margin-top:2px;font-weight:600">'+b.date+'</div>':'')+
+  '</div>'+
+  '<div class="brow">'+
+  '<button class="btn bsec" onclick="toast(\'Đã lưu ảnh hóa đơn!\')">'+I.receipt+' Lưu ảnh</button>'+
+  '<button class="btn bsky" style="flex:1;background:#0284c7;color:#fff" onclick="sendZalo(\''+id+'\',\''+r.tenant+'\','+dc.total+')">'+I.send+' Gửi Zalo</button>'+
+  '</div>'+
+  (b.collected?'':'<button class="btn bgreen bfull" id="bcol-'+id+'" onclick="markCollected(\''+id+'\','+dc.total+')">'+I.check+' Đánh dấu đã thu tiền</button>')+
+  '</div>';
+},
+
+debt:function(){
+  var dr=debtRooms();
+  var sc=dr.filter(function(r){return S.bills[r.id]&&S.bills[r.id].sent;}).length;
+  var td=dr.reduce(function(s,r){return s+calcBill(r).total;},0);
+  var uns=dr.filter(function(r){return !S.bills[r.id]||!S.bills[r.id].sent;}).length;
+  var rows=dr.map(function(r){
+    var b=S.bills[r.id]||{}, dc=calcBill(r);
+    var dp=S.debtPrev[r.id];
+    var debtMonths=dp?dp.months:1;
+    var debtLabel=dp?dp.label:('T'+(S.currentMonthIdx+1)+'/'+S.currentYear);
+    return '<div class="dcard '+(debtMonths>=2?'ov':'')+'" data-ds="'+(b.sent?'sent':'unsent')+'">'+
+    '<div><div class="droom-lbl">'+r.id+'</div>'+
+    (debtMonths>=2?'<span class="bdg bdg-rose">Nợ '+debtMonths+' tháng</span>':'<span class="bdg bdg-gray">'+debtLabel+'</span>')+
+    '</div>'+
+    '<div class="dinfo"><div class="dtname">'+r.tenant+'</div><div class="damount">'+fmt(dc.total)+' đ</div><div class="dmeta">'+(b.sent?'Đã gửi '+b.date:'Chưa gửi hóa đơn')+'</div></div>'+
+    '<div style="display:flex;flex-direction:column;gap:5px">'+
+    (b.sent?
+    '<div class="dsent">Đã gửi</div><button class="dsend" style="background:#16a34a" onclick="collectDebt(\''+r.id+'\','+dc.total+')">Thu tiền</button>':
+    '<button class="dsend" onclick="App.goBill(\''+r.id+'\')">Gửi bill</button>')+
+    '</div></div>';
+  }).join('');
+  return '<div class="topbar"><span class="tbtitle">Công nợ</span></div>'+
+  '<div class="sumbar">'+
+  '<div class="sbrow"><span class="sblbl">Phòng chưa thu tiền</span><span class="sbval">'+dr.length+' phòng</span></div>'+
+  '<div class="sbrow"><span class="sblbl">Đã gửi hóa đơn</span><span class="sbval" style="color:#0284c7">'+sc+' phòng</span></div>'+
+  '<div class="sbrow"><span class="sblbl">Tổng cần thu</span><span class="sbval">'+fmt(td)+' đ</span></div>'+
+  '</div>'+
+  '<div class="scroll">'+
+  (dr.length===0?
+  '<div class="empty"><div class="emptyicon">'+I.check+'</div>'+
+  '<div class="emptytxt">Tuyệt vời! Tất cả phòng đã thu tiền tháng này.</div></div>':
+  '<div class="segwrap">'+
+  '<button class="seg on" onclick="fDebt(this,\'all\')">Tất cả ('+dr.length+')</button>'+
+  '<button class="seg" onclick="fDebt(this,\'unsent\')">Chưa gửi ('+uns+')</button>'+
+  '<button class="seg" onclick="fDebt(this,\'sent\')">Đã gửi ('+sc+')</button>'+
+  '</div>'+
+  '<div id="dlist" style="display:flex;flex-direction:column;gap:9px">'+rows+'</div>'+
+  '<button class="btn bprim bfull" onclick="sendAll()" style="margin-top:4px">'+I.send+' Gửi tất cả hóa đơn ('+uns+')</button>')+
+  '</div>';
+},
+
+settings:function(){
+  var mkRow=function(icon,bg,lbl,sub,onclick){
+    return '<div class="sitem" onclick="'+onclick+'">'+
+    '<div class="siconwrap" style="background:'+bg+'">'+icon+'</div>'+
+    '<div class="sbody"><div class="slbl">'+lbl+'</div>'+(sub?'<div class="ssub">'+sub+'</div>':'')+' </div>'+
+    '<div class="sarr">'+I.chevron+'</div></div>';
+  };
+  return '<div class="topbar"><span class="tbtitle">Cài đặt</span></div>'+
+  '<div class="scroll">'+
+  '<div class="card" style="padding:0;overflow:hidden">'+
+  '<div style="background:#f8fafc;padding:8px 15px;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px">Nhà trọ</div>'+
+  mkRow(I.building,'#16a34a','Thông tin nhà trọ',S.lodge.name,"R.push('li',Scr.lodgeInfo())")+
+  mkRow(I.bolt,'#d97706','Đơn giá điện / nước',fmt(S.prices.elec)+'đ/kWh · '+fmt(S.prices.water)+'đ/m³',"R.push('pr',Scr.prices())")+
+  '</div>'+
+  '<div class="card" style="padding:0;overflow:hidden">'+
+  '<div style="background:#f8fafc;padding:8px 15px;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px">Dữ liệu</div>'+
+  mkRow(I.cloud,'#0284c7','Sao lưu dữ liệu','Export JSON',"doBackup()")+
+  mkRow(I.restore,'#7c3aed','Khôi phục dữ liệu','Import từ file',"openM('m-rst')")+
+  '</div>'+
+  '<div class="card" style="padding:0;overflow:hidden">'+
+  '<div style="background:#f8fafc;padding:8px 15px;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px">Tài khoản</div>'+
+  mkRow(I.user,'#16a34a','Thông tin tài khoản',(function(){var acc=S.accounts.find(function(a){return S.user&&a.phone===S.user.phone;});return acc&&acc.email?acc.email:'Chưa có email';}()),"R.push('accinfo',Scr.accInfo())")+
+  mkRow(I.lock,'#475569','Đổi mật khẩu','Xác nhận qua email',"R.push('cpw',Scr.changePw())")+
+  mkRow(I.logout,'#e11d48','Đăng xuất',(S.user?S.user.phone:''),"doLogout()")+
+  '</div>'+
+  '<div style="text-align:center;font-size:11px;color:#94a3b8;padding:14px;font-weight:600">App Trọ Lỏ Lỏ v1.0.0 · Made with ♥</div>'+
+  '</div>'+
+  '<div class="mbg" id="m-rst" onclick="bgClose(event,\'m-rst\')"><div class="msheet">'+
+  '<div class="mhandle"></div><div class="mtitle">Khôi phục dữ liệu</div>'+
+  '<p style="font-size:13px;color:#64748b;font-weight:600">Dán nội dung file backup JSON vào đây:</p>'+
+  '<textarea class="finput" rows="5" style="resize:none" placeholder=\'{"rooms":[...]}\'></textarea>'+
+  '<div class="brow"><button class="btn bsec" onclick="closeM(\'m-rst\')">Hủy</button><button class="btn bprim" onclick="doRestore()">Khôi phục</button></div>'+
+  '</div></div>';
+},
+
+lodgeInfo:function(){
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button>'+
+  '<span class="tbtitle">Thông tin nhà trọ</span>'+
+  '<button style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px" id="li-btn" onclick="toggleLodge()">'+I.edit+' Sửa</button></div>'+
+  '<div class="scroll">'+
+  '<div class="card" id="li-view"><div class="ctitle">Hiển thị trên hóa đơn</div>'+
+  '<div class="drow"><span class="dlbl">'+I.building+' Tên nhà trọ</span><span class="dval">'+S.lodge.name+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Địa chỉ</span><span class="dval">'+S.lodge.address+'</span></div>'+
+  '<div class="drow"><span class="dlbl">SĐT chủ trọ</span><span class="dval">'+S.lodge.phone+'</span></div>'+
+  '<div class="drow"><span class="dlbl">STK ngân hàng</span><span class="dval">'+S.lodge.bank+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Ngân hàng</span><span class="dval">'+S.lodge.bankName+'</span></div>'+
+  '</div>'+
+  '<div id="li-edit" style="display:none;flex-direction:column;gap:10px">'+
+  '<div class="fg"><label class="flabel">Tên nhà trọ</label><input class="finput" id="li-n" value="'+S.lodge.name+'"></div>'+
+  '<div class="fg"><label class="flabel">Địa chỉ</label><input class="finput" id="li-a" value="'+S.lodge.address+'"></div>'+
+  '<div class="fg"><label class="flabel">SĐT chủ trọ</label><input class="finput" id="li-p" value="'+S.lodge.phone+'"></div>'+
+  '<div class="fg"><label class="flabel">STK Ngân hàng</label><input class="finput" id="li-b" value="'+S.lodge.bank+'"></div>'+
+  '<div class="fg"><label class="flabel">Tên ngân hàng</label><input class="finput" id="li-bn" value="'+S.lodge.bankName+'"></div>'+
+  '<button class="btn bprim bfull" onclick="saveLodge()">'+I.check+' Lưu thay đổi</button>'+
+  '</div></div>';
+},
+
+prices:function(){
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Thiết lập đơn giá</span></div>'+
+  '<div class="scroll">'+
+  '<div class="card"><div class="ctitle">'+I.bolt+' Giá điện</div>'+
+  '<div class="fg"><label class="flabel">Giá điện (đ/kWh)</label><input class="finput" id="pr-e" type="number" value="'+S.prices.elec+'"></div>'+
+  '</div>'+
+  '<div class="card"><div class="ctitle">'+I.droplet+' Chế độ tính tiền nước</div>'+
+  '<div class="segwrap" style="margin-bottom:12px">'+
+  '<button class="seg '+(S.prices.waterMode==='meter'?'on':'')+'" onclick="setWaterMode(\'meter\')">Theo công tơ</button>'+
+  '<button class="seg '+(S.prices.waterMode==='fixed'?'on':'')+'" onclick="setWaterMode(\'fixed\')">Tiền cố định</button>'+
+  '</div>'+
+  '<div id="water-meter-row" style="'+(S.prices.waterMode==='meter'?'':'display:none')+'">'+
+  '<div class="fg"><label class="flabel">Đơn giá nước (đ/m³)</label><input class="finput" id="pr-w" type="number" value="'+S.prices.water+'"></div>'+
+  '</div>'+
+  '<div id="water-fixed-row" style="'+(S.prices.waterMode==='fixed'?'':'display:none')+'">'+
+  '<div class="fg"><label class="flabel">Tiền nước cố định (đ/tháng)</label><input class="finput" id="pr-wfx" type="number" value="'+S.prices.waterFixed+'"></div>'+
+  '</div>'+
+  '</div>'+
+  '<div class="card"><div class="ctitle">'+I.wifi+' Phí dịch vụ</div>'+
+  '<div style="display:flex;flex-direction:column;gap:10px">'+
+  '<div class="fg"><label class="flabel">Phí Wifi (đ/tháng)</label><input class="finput" id="pr-wf" type="number" value="'+S.prices.wifi+'"></div>'+
+  '<div class="fg"><label class="flabel">Phí rác (đ/tháng)</label><input class="finput" id="pr-g" type="number" value="'+S.prices.garbage+'"></div>'+
+  '</div></div>'+
+  '<div class="info-pill">'+I.info+'<div class="info-pill-txt">Thay đổi đơn giá áp dụng cho tất cả phòng từ kỳ ghi điện nước tiếp theo.</div></div>'+
+  '<button class="btn bprim bfull" onclick="savePrices()">'+I.check+' Lưu cấu hình giá</button>'+
+  '</div>';
+},
+
+accInfo:function(){
+  var acc=(S.user&&S.accounts.find(function(a){return a.phone===S.user.phone;}))||{};
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Thông tin tài khoản</span>'+
+  '<button style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px" id="ai-btn" onclick="toggleAccInfo()">'+I.edit+' Sửa</button></div>'+
+  '<div class="scroll">'+
+  '<div style="display:flex;flex-direction:column;align-items:center;padding:18px 0 6px;gap:10px">'+
+  '<div style="width:72px;height:72px;background:linear-gradient(145deg,#166534,#16a34a);border-radius:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(22,163,74,.3)">'+
+  I.user+'</div>'+
+  '<div style="text-align:center"><div style="font-size:18px;font-weight:900;color:#0f172a">'+(acc.name||'')+'</div>'+
+  '<div style="font-size:13px;color:#64748b;margin-top:2px;font-weight:600">'+(acc.phone||'')+'</div></div>'+
+  '</div>'+
+  '<div class="card" id="ai-view"><div class="ctitle">Thông tin cá nhân</div>'+
+  '<div class="drow"><span class="dlbl">Họ và tên</span><span class="dval">'+(acc.name||'—')+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Số điện thoại</span><span class="dval">'+(acc.phone||'—')+'</span></div>'+
+  '<div class="drow"><span class="dlbl">Email</span><span class="dval grn">'+(acc.email||'<span style="color:#94a3b8;font-weight:600">Chưa cài đặt</span>')+'</span></div>'+
+  '</div>'+
+  '<div id="ai-edit" style="display:none;flex-direction:column;gap:10px">'+
+  '<div class="fg"><label class="flabel">Họ và tên</label><input class="finput" id="ai-n" value="'+(acc.name||'')+'"></div>'+
+  '<div class="fg"><label class="flabel">Email</label>'+
+  '<input class="finput" id="ai-em" type="email" value="'+(acc.email||'')+'" placeholder="example@gmail.com">'+
+  '<div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600">Dùng để nhận OTP xác nhận đổi mật khẩu</div></div>'+
+  '<div class="etxt" id="ai-err" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="saveAccInfo()">'+I.check+' Lưu thay đổi</button>'+
+  '</div>'+
+  (acc.email?'':
+  '<div class="info-pill">'+I.info+
+  '<div class="info-pill-txt">Bạn chưa cài đặt email. Hãy thêm email để sử dụng tính năng đổi mật khẩu qua xác nhận email.</div></div>')+
+  '</div>';
+},
+
+changePw:function(){
+  var acc=(S.user&&S.accounts.find(function(a){return a.phone===S.user.phone;}))||{};
+  var email=acc.email||'';
+  var masked=email?email.replace(/(.{2})(.*)(@.*)/,function(_,a,b,c){return a+b.replace(/./g,'*')+c;}):'(chưa có email)';
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Đổi mật khẩu</span></div>'+
+  '<div class="scroll">'+
+
+  // STEP 1: enter current pw + request email OTP
+  '<div id="cpw-step1">'+
+  '<div class="card"><div class="ctitle">Bước 1 · Xác minh danh tính</div>'+
+  '<div style="display:flex;flex-direction:column;gap:11px;margin-top:4px">'+
+  '<div class="fg"><label class="flabel">Mật khẩu hiện tại</label><input class="finput" id="cp-o" type="password" placeholder="••••••••"></div>'+
+  '</div></div>'+
+  '<div class="card" style="background:#f0fdf4;border:1px solid #bbf7d0">'+
+  '<div style="display:flex;align-items:center;gap:10px">'+
+  '<div style="width:36px;height:36px;background:#16a34a;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+I.mail+'</div>'+
+  '<div><div style="font-size:13px;font-weight:800;color:#15803d">Xác nhận qua Email</div>'+
+  '<div style="font-size:12px;color:#166534;margin-top:1px;font-weight:600">Mã OTP sẽ gửi đến: <b>'+masked+'</b></div></div>'+
+  '</div></div>'+
+  '<div class="etxt" id="cp-err1" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="cpwStep1()">'+I.send+' Gửi mã OTP đến Email</button>'+
+  '</div>'+
+
+  // STEP 2: enter OTP
+  '<div id="cpw-step2" style="display:none;flex-direction:column;gap:12px">'+
+  '<div class="card">'+
+  '<div style="text-align:center;margin-bottom:14px">'+
+  '<div style="width:56px;height:56px;background:#dcfce7;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">'+
+  '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>'+
+  '</div>'+
+  '<div style="font-size:15px;font-weight:800;color:#0f172a">Kiểm tra hộp thư của bạn</div>'+
+  '<div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600">Mã OTP 6 số đã gửi đến<br><b style="color:#15803d">'+masked+'</b></div>'+
+  '</div>'+
+  '<div class="fg"><label class="flabel">Nhập mã OTP</label>'+
+  '<input class="finput" id="cp-otp" type="number" placeholder="· · · · · ·" style="font-size:24px;letter-spacing:12px;text-align:center;font-weight:800" maxlength="6">'+
+  '</div>'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'+
+  '<span style="font-size:12px;color:#64748b;font-weight:600">Hiệu lực: <span id="cp-timer" style="color:#e11d48;font-weight:800">05:00</span></span>'+
+  '<span style="font-size:12px;color:#16a34a;font-weight:800;cursor:pointer" onclick="cpwResend()">Gửi lại mã</span>'+
+  '</div>'+
+  '</div>'+
+  '<div class="etxt" id="cp-err2" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="cpwStep2()">'+I.check+' Xác nhận OTP</button>'+
+  '<button class="btn bsec bfull" onclick="cpwBack()">Quay lại</button>'+
+  '</div>'+
+
+  // STEP 3: set new password
+  '<div id="cpw-step3" style="display:none;flex-direction:column;gap:12px">'+
+  '<div class="card" style="background:#f0fdf4;border:1px solid #bbf7d0">'+
+  '<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#15803d">'+
+  I.check+' Email đã xác minh thành công</div>'+
+  '</div>'+
+  '<div class="card"><div class="ctitle">Bước 3 · Đặt mật khẩu mới</div>'+
+  '<div style="display:flex;flex-direction:column;gap:11px;margin-top:4px">'+
+  '<div class="fg"><label class="flabel">Mật khẩu mới</label><input class="finput" id="cp-n" type="password" placeholder="Ít nhất 6 ký tự"></div>'+
+  '<div class="fg"><label class="flabel">Nhập lại mật khẩu mới</label><input class="finput" id="cp-n2" type="password" placeholder="Xác nhận mật khẩu mới"></div>'+
+  '</div></div>'+
+  '<div class="info-pill">'+I.info+'<div class="info-pill-txt">Mật khẩu nên có ít nhất 6 ký tự, bao gồm chữ và số.</div></div>'+
+  '<div class="etxt" id="cp-err3" style="display:none"></div>'+
+  '<button class="btn bprim bfull" onclick="doChangePw()">'+I.lock+' Lưu mật khẩu mới</button>'+
+  '</div>'+
+
+  '</div>';
+}
+
+,notifications:function(){
+  var notifs=S.notifications;
+  notifs.forEach(function(n){n.read=true;});
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Thông báo</span></div>'+
+  '<div class="scroll">'+
+  (notifs.length===0?
+  '<div class="empty"><div class="emptyicon">'+I.bell+'</div><div class="emptytxt">Chưa có thông báo nào.</div></div>':
+  notifs.map(function(n){
+    var ic=n.type==='debt'?I.bell:I.info;
+    var bg=n.type==='debt'?'#ffe4e6':n.type==='reminder'?'#fef3c7':'#e0f2fe';
+    var sc=n.type==='debt'?'#e11d48':n.type==='reminder'?'#d97706':'#0284c7';
+    return '<div class="card" style="border-left:3px solid '+sc+'">'+
+    '<div style="display:flex;gap:10px;align-items:flex-start">'+
+    '<div style="width:34px;height:34px;background:'+bg+';border-radius:10px;display:flex;align-items:center;justify-content:center;color:'+sc+';flex-shrink:0">'+ic+'</div>'+
+    '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0f172a">'+n.msg+'</div>'+
+    '<div style="font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600">'+n.time+'</div></div>'+
+    '</div></div>';
+  }).join(''))+
+  '</div>';
+}
+
+,onboarding:function(){
+  var steps=[
+    {icon:I.plus,title:'1. Thêm phòng',desc:'Tab Phòng → "+ Thêm" để tạo phòng mới. Nhập tên phòng, giá thuê, mô tả tiện ích.'},
+    {icon:I.user,title:'2. Thêm khách thuê',desc:'Chọn phòng trống → "Thêm khách thuê". Nhập tên, SĐT, ngày vào và chỉ số điện nước ban đầu.'},
+    {icon:I.bolt,title:'3. Ghi điện nước cuối tháng',desc:'Cuối tháng vào tab Phòng → chọn phòng → "Ghi điện nước". Nhập chỉ số mới, hệ thống tự tính. Nếu ghi sang tháng mới, hóa đơn sẽ được tính vào tháng cũ.'},
+    {icon:I.receipt,title:'4. Tạo & gửi hóa đơn',desc:'Nhấn "Lưu & Tạo hóa đơn ngay" → xem hóa đơn → gửi qua Zalo. Tiền phòng trả trước (hợp đồng quý/6 tháng) sẽ tự động không tính vào bill.'},
+    {icon:I.money,title:'5. Thu tiền & đánh dấu',desc:'Khách trả xong → vào hóa đơn hoặc tab Công nợ → "Thu tiền". Phòng sẽ chuyển sang trạng thái đã thu.'},
+    {icon:I.settings,title:'6. Cài đặt giá & tùy chọn',desc:'Vào Cài đặt → Đơn giá để thiết lập giá điện, nước (theo công tơ hoặc cố định mỗi tháng), wifi, phí rác.'},
+  ];
+  return '<div class="topbar"><button class="tbback" onclick="App.back()">'+I.back+'</button><span class="tbtitle">Hướng dẫn</span></div>'+
+  '<div class="scroll">'+
+  '<div style="background:linear-gradient(135deg,#0f4c27,#16a34a);border-radius:14px;padding:18px;text-align:center;color:#fff">'+
+  '<div style="font-size:20px;font-weight:900;margin-bottom:6px">Chào mừng đến App Trọ!</div>'+
+  '<div style="font-size:13px;opacity:.8;font-weight:600;line-height:1.5">Làm theo 6 bước dưới đây<br>để bắt đầu quản lý nhà trọ của bạn.</div>'+
+  '</div>'+
+  steps.map(function(s){
+    return '<div class="card" style="display:flex;gap:12px;align-items:flex-start">'+
+    '<div style="width:40px;height:40px;min-width:40px;background:#dcfce7;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#16a34a">'+s.icon+'</div>'+
+    '<div><div style="font-size:14px;font-weight:800;color:#0f172a">'+s.title+'</div>'+
+    '<div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;line-height:1.6">'+s.desc+'</div></div>'+
+    '</div>';
+  }).join('')+
+  '<button class="btn bprim bfull" onclick="S.onboardingDone=true;App.back();toast(\'Bắt đầu thôi! 🎉\')">'+I.check+' Đã hiểu, bắt đầu quản lý!</button>'+
+  '</div>';
+}
+
+};
+
+// ── MODAL BUILDERS ──
+function mkEditModal(r){
+  var id=r.id;
+  return '<div class="mbg" id="m-er-'+id+'" onclick="bgClose(event,\'m-er-'+id+'\')"><div class="msheet">'+
+  '<div class="mhandle"></div><div class="mtitle">Sửa thông tin phòng</div>'+
+  '<div class="fg"><label class="flabel">Tên phòng</label><input class="finput" id="er-n-'+id+'" value="'+r.name+'"></div>'+
+  '<div class="fg"><label class="flabel">Giá thuê (đ/th)</label><input class="finput" id="er-p-'+id+'" type="number" value="'+r.price+'"></div>'+
+  '<div class="fg"><label class="flabel">Trạng thái</label>'+
+  '<select class="fselect" id="er-s-'+id+'">'+
+  '<option value="occupied"'+(r.status==='occupied'?' selected':'')+'>Có khách</option>'+
+  '<option value="empty"'+(r.status==='empty'?' selected':'')+'>Trống</option>'+
+  '<option value="maintenance"'+(r.status==='maintenance'?' selected':'')+'>Bảo trì</option>'+
+  '<option value="debt"'+(r.status==='debt'?' selected':'')+'>Nợ tiền</option>'+
+  '</select></div>'+
+  '<div class="fg"><label class="flabel">Mô tả</label><input class="finput" id="er-d-'+id+'" value="'+(r.desc||'')+'"></div>'+
+  '<div class="brow"><button class="btn bsec" onclick="closeM(\'m-er-'+id+'\')">Hủy</button><button class="btn bprim" onclick="doEditRoom(\''+id+'\')">'+I.check+' Lưu</button></div>'+
+  '</div></div>';
+}
+function mkTenantModal(r){
+  var id=r.id;
+  return '<div class="mbg" id="m-at-'+id+'" onclick="bgClose(event,\'m-at-'+id+'\')"><div class="msheet">'+
+  '<div class="mhandle"></div><div class="mtitle">Thêm khách thuê</div>'+
+  '<div class="fg"><label class="flabel">Họ tên khách *</label><input class="finput" id="at-n-'+id+'" placeholder="Nguyễn Văn A"></div>'+
+  '<div class="fg"><label class="flabel">Số điện thoại *</label><input class="finput" id="at-p-'+id+'" type="tel" placeholder="0912 345 678"></div>'+
+  '<div class="fg"><label class="flabel">Ngày vào</label><input class="finput" id="at-ci-'+id+'" type="date"></div>'+
+  '<div class="fg"><label class="flabel">Số người ở</label><input class="finput" id="at-ppl-'+id+'" type="number" value="1" min="1"></div>'+
+  '<div class="fg"><label class="flabel">Loại hợp đồng</label>'+
+  '<select class="fselect" id="at-ct-'+id+'" onchange="togglePrepaid(\'at\',\''+id+'\')">'+
+  '<option value="monthly">Theo tháng</option>'+
+  '<option value="quarter">Theo quý (3 tháng)</option>'+
+  '<option value="halfyear">6 tháng</option>'+
+  '</select></div>'+
+  '<div id="at-prepaid-row-'+id+'" style="display:none">'+
+  '<div class="fg"><label class="flabel">Số tháng trả trước</label>'+
+  '<input class="finput" id="at-pre-'+id+'" type="number" min="1" placeholder="3" value="3">'+
+  '<div style="font-size:11px;color:#64748b;margin-top:3px;font-weight:600">Tiền phòng sẽ không tính vào hóa đơn hàng tháng trong thời gian đã trả trước.</div></div>'+
+  '</div>'+
+  '<div class="fg"><label class="flabel">Chỉ số điện ban đầu (kWh)</label><input class="finput" id="at-e-'+id+'" type="number" value="0"></div>'+
+  '<div class="fg"><label class="flabel">Chỉ số nước ban đầu (m³)</label><input class="finput" id="at-w-'+id+'" type="number" value="0"></div>'+
+  '<div class="brow"><button class="btn bsec" onclick="closeM(\'m-at-'+id+'\')">Hủy</button><button class="btn bprim" onclick="doAddTenant(\''+id+'\')">'+I.check+' Thêm khách</button></div>'+
+  '</div></div>';
+}
+
+function mkEditTenantModal(r){
+  var id=r.id;
+  var isPrepaid=(r.contract==='quarter'||r.contract==='halfyear');
+  return '<div class="mbg" id="m-et-'+id+'" onclick="bgClose(event,\'m-et-'+id+'\')"><div class="msheet">'+
+  '<div class="mhandle"></div><div class="mtitle">Sửa thông tin khách</div>'+
+  '<div class="fg"><label class="flabel">Họ tên khách *</label><input class="finput" id="et-n-'+id+'" value="'+(r.tenant||'')+'"></div>'+
+  '<div class="fg"><label class="flabel">Số điện thoại *</label><input class="finput" id="et-p-'+id+'" type="tel" value="'+(r.phone||'')+'"></div>'+
+  '<div class="fg"><label class="flabel">Ngày vào</label><input class="finput" id="et-ci-'+id+'" type="date" value="'+(r.checkin?r.checkin.split('/').reverse().join('-'):'')+'"></div>'+
+  '<div class="fg"><label class="flabel">Số người ở</label><input class="finput" id="et-ppl-'+id+'" type="number" value="'+(r.people||1)+'" min="1"></div>'+
+  '<div class="fg"><label class="flabel">Loại hợp đồng</label>'+
+  '<select class="fselect" id="et-ct-'+id+'" onchange="togglePrepaid(\'et\',\''+id+'\')">'+
+  '<option value="monthly"'+(r.contract==='monthly'?' selected':'')+'>Theo tháng</option>'+
+  '<option value="quarter"'+(r.contract==='quarter'?' selected':'')+'>Theo quý (3 tháng)</option>'+
+  '<option value="halfyear"'+(r.contract==='halfyear'?' selected':'')+'>6 tháng</option>'+
+  '</select></div>'+
+  '<div id="et-prepaid-row-'+id+'" style="'+(isPrepaid?'':'display:none')+'">'+
+  '<div class="fg"><label class="flabel">Số tháng trả trước còn lại</label>'+
+  '<input class="finput" id="et-pre-'+id+'" type="number" min="0" value="'+(r.contractPrepaid||0)+'">'+
+  '<div style="font-size:11px;color:#64748b;margin-top:3px;font-weight:600">Nhập 0 nếu đã hết kỳ trả trước.</div></div>'+
+  '</div>'+
+  '<div class="etxt" id="et-err-'+id+'" style="display:none"></div>'+
+  '<div class="brow">'+
+  '<button class="btn bsec" onclick="closeM(\'m-et-'+id+'\')">Hủy</button>'+
+  '<button class="btn bprim" onclick="doEditTenant(\''+id+'\')">'+I.check+' Lưu thay đổi</button>'+
+  '</div>'+
+  '</div></div>';
+}
+function mkCoModal(r){
+  var id=r.id;
+  return '<div class="mbg" id="m-co-'+id+'" onclick="bgClose(event,\'m-co-'+id+'\')"><div class="msheet">'+
+  '<div class="mhandle"></div><div class="mtitle">Xác nhận trả phòng</div>'+
+  '<p style="font-size:13px;color:#64748b;font-weight:600">Xác nhận <b>'+r.tenant+'</b> trả phòng <b>'+r.name+'</b>? Dữ liệu khách sẽ bị xóa khỏi hệ thống.</p>'+
+  '<div class="brow"><button class="btn bsec" onclick="closeM(\'m-co-'+id+'\')">Hủy</button><button class="btn brose" onclick="doCheckout(\''+id+'\')">'+I.trash+' Xác nhận</button></div>'+
+  '</div></div>';
+}
+function mkAddMemberModal(r){
+  var id=r.id;
+  return '<div class="mbg" id="m-am-'+id+'" onclick="bgClose(event,\'m-am-'+id+'\')"><div class="msheet">'+
+  '<div class="mhandle"></div>'+
+  '<div class="mtitle">Thêm người ở cùng</div>'+
+  '<p style="font-size:13px;color:#64748b;font-weight:600">Nhập thông tin người ở cùng với <b>'+r.tenant+'</b>.</p>'+
+  '<div class="fg"><label class="flabel">Họ và tên *</label><input class="finput" id="am-n-'+id+'" placeholder="Nguyễn Văn B"></div>'+
+  '<div class="fg"><label class="flabel">Số điện thoại</label><input class="finput" id="am-p-'+id+'" type="tel" placeholder="0912 345 678 (không bắt buộc)"></div>'+
+  '<div class="fg"><label class="flabel">Ghi chú (quan hệ)</label><input class="finput" id="am-note-'+id+'" placeholder="Vợ / Chồng / Bạn cùng phòng..."></div>'+
+  '<div class="etxt" id="am-err-'+id+'" style="display:none"></div>'+
+  '<div class="brow">'+
+  '<button class="btn bsec" onclick="closeM(\'m-am-'+id+'\')">Hủy</button>'+
+  '<button class="btn bprim" onclick="doAddMember(\''+id+'\')">'+I.check+' Thêm người</button>'+
+  '</div>'+
+  '</div></div>';
+}
+function mkACard(icon,bg,title,sub,badge,badgeBg,badgeColor,onclick){
+  return '<div class="acard" onclick="'+onclick+'">'+
+  '<div class="acard-icon" style="background:'+bg+'">'+icon+'</div>'+
+  '<div class="abody"><div class="atitle">'+title+'</div><div class="asub">'+sub+'</div></div>'+
+  '<div class="abadge" style="background:'+badgeBg+';color:'+badgeColor+'">'+badge+'</div>'+
+  '</div>';
+}
+
+// ── RENDER ──
+function renderGrid(rooms){
+  var addBtn='<div class="radd" onclick="openM(\'m-ar\')">'+I.plus+'<div class="radd-txt">Thêm phòng</div></div>';
+  if(!rooms.length) return '<div class="rgrid">'+addBtn+'</div>';
+  var rows=rooms.map(function(r){
+    return '<div class="rcard '+roomCls(r)+'" onclick="App.goRoom(\''+r.id+'\')">'+
+    '<div class="rcard-ico" style="background:'+roomIconBg(r)+'">'+I.door+'</div>'+
+    '<div class="rnum">'+r.name+'</div>'+
+    '<div class="rname">'+(r.status==='empty'?'— Trống —':r.tenant)+'</div>'+
+    '<div class="rprice">'+fmt(r.price)+' đ/th</div>'+
+    '<div style="margin-top:5px">'+roomBadge(r)+'</div></div>';
+  }).join('');
+  return '<div class="rgrid">'+rows+addBtn+'</div>';
+}
+
+// ── ACTIONS ──
+function doLogin(){
+  var ph=gv('lp'),pw=gv('lpw');
+  var acc=S.accounts.find(function(a){return a.phone===ph&&a.password===pw;});
+  if(!acc){ge('lerr').style.display='flex';return;}
+  ge('lerr').style.display='none';S.user=acc;
+  document.getElementById('bnav').style.display='flex';App.tab('home');
+}
+function doRegister(){
+  var n=gv('rn'),ph=gv('rph'),em=gv('rem'),pw=gv('rpw'),pw2=gv('rpw2'),l=gv('rl');
+  var err=ge('rerr');
+  if(!n||!ph||!em||!pw||!l){err.textContent='Vui lòng điền đủ thông tin bắt buộc!';err.style.display='flex';return;}
+  if(ph.length<10){err.textContent='Số điện thoại phải có 10 chữ số!';err.style.display='flex';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){err.textContent='Email không hợp lệ!';err.style.display='flex';return;}
+  if(pw.length<6){err.textContent='Mật khẩu phải ít nhất 6 ký tự!';err.style.display='flex';return;}
+  if(pw!==pw2){err.textContent='Mật khẩu nhập lại không khớp!';err.style.display='flex';return;}
+  S.accounts.push({phone:ph,password:pw,name:n,email:em});
+  S.lodge.name=l;
+  var a=gv('ra');if(a)S.lodge.address=a;
+  S.user={phone:ph,name:n};
+  S.onboardingDone=false;
+  autoSave();
+  toast('Đăng ký thành công!');
+  document.getElementById('bnav').style.display='flex';
+  setTimeout(function(){App.tab('home');},600);
+}
+function doLogout(){
+  S.user=null;document.getElementById('bnav').style.display='none';
+  R.go('login',Scr.login());toast('Đã đăng xuất!');
+}
+function doAddRoom(){
+  var n=gv('ar-n'),p=parseInt(gv('ar-p'))||0,d=gv('ar-d');
+  var err=ge('ar-err');
+  if(!n){err.textContent='Vui lòng nhập tên phòng!';err.style.display='flex';return;}
+  if(S.rooms.find(function(r){return r.name===n;})){err.textContent='Tên phòng đã tồn tại!';err.style.display='flex';return;}
+  var nums=n.replace(/\D/g,'');
+  S.rooms.push({id:'P'+(nums||Date.now()),name:n,price:p,status:'empty',tenant:'',phone:'',checkin:'',people:0,ep:0,wp:0,desc:d,
+    contract:'monthly',contractMonths:0,contractPrepaid:0,members:[]});
+  autoSave();closeM('m-ar');toast('Thêm phòng thành công!');App.tab('rooms');
+}
+function doEditRoom(id){
+  var r=S.rooms.find(function(x){return x.id===id;});if(!r)return;
+  r.name=gv('er-n-'+id)||r.name;r.price=parseInt(gv('er-p-'+id))||r.price;
+  r.status=document.getElementById('er-s-'+id).value;r.desc=gv('er-d-'+id)||r.desc;
+  autoSave();closeM('m-er-'+id);toast('Cập nhật thành công!');App.back();R.push('rd',Scr.roomDetail(r));
+}
+function doAddTenant(id){
+  var r=S.rooms.find(function(x){return x.id===id;});if(!r)return;
+  var n=gv('at-n-'+id),ph=gv('at-p-'+id);
+  if(!n||!ph){toast('Vui lòng nhập tên và SĐT!');return;}
+  r.tenant=n;r.phone=ph;r.status='occupied';
+  var ci=gv('at-ci-'+id);r.checkin=ci?new Date(ci).toLocaleDateString('vi'):new Date().toLocaleDateString('vi');
+  r.people=parseInt(gv('at-ppl-'+id))||1;
+  r.ep=parseInt(gv('at-e-'+id))||0;r.wp=parseInt(gv('at-w-'+id))||0;
+  var ct=gv('at-ct-'+id)||'monthly';
+  r.contract=ct;
+  r.contractPrepaid=(ct!=='monthly')?parseInt(gv('at-pre-'+id))||0:0;
+  r.contractMonths=(ct==='quarter'?3:ct==='halfyear'?6:0);
+  if(!r.members) r.members=[];
+  S.acts.unshift({txt:r.id+' · Thêm khách: '+n,time:timeLabel(),c:'pr'});
+  autoSave();closeM('m-at-'+id);toast('Thêm khách thuê thành công!');App.back();R.push('rd',Scr.roomDetail(r));
+}
+
+function doEditTenant(id){
+  var r=S.rooms.find(function(x){return x.id===id;});if(!r)return;
+  var n=gv('et-n-'+id),ph=gv('et-p-'+id);
+  var err=ge('et-err-'+id);
+  if(!n||!n.trim()){if(err){err.textContent='Vui lòng nhập họ tên!';err.style.display='flex';}return;}
+  if(!ph||!ph.trim()){if(err){err.textContent='Vui lòng nhập số điện thoại!';err.style.display='flex';}return;}
+  if(err) err.style.display='none';
+  r.tenant=n.trim();r.phone=ph.trim();
+  var ci=gv('et-ci-'+id);
+  if(ci) r.checkin=new Date(ci).toLocaleDateString('vi');
+  r.people=parseInt(gv('et-ppl-'+id))||r.people;
+  var ct=gv('et-ct-'+id)||r.contract||'monthly';
+  r.contract=ct;
+  r.contractPrepaid=(ct!=='monthly')?parseInt(gv('et-pre-'+id))||0:0;
+  r.contractMonths=(ct==='quarter'?3:ct==='halfyear'?6:0);
+  S.acts.unshift({txt:r.id+' · Cập nhật thông tin khách',time:timeLabel(),c:'pr'});
+  autoSave();closeM('m-et-'+id);toast('Cập nhật thành công!');App.back();R.push('rd',Scr.roomDetail(r));
+}
+
+function togglePrepaid(prefix,id){
+  var sel=ge(prefix+'-ct-'+id);
+  if(!sel)return;
+  var row=ge(prefix+'-prepaid-row-'+id);
+  if(!row)return;
+  var isPrepaid=(sel.value==='quarter'||sel.value==='halfyear');
+  row.style.display=isPrepaid?'':'none';
+  // Set default value based on type
+  var pre=ge(prefix+'-pre-'+id);
+  if(pre&&!pre.value){pre.value=(sel.value==='quarter'?'3':'6');}
+}
+function doAddMember(id){
+  var r=S.rooms.find(function(x){return x.id===id;});if(!r)return;
+  var n=gv('am-n-'+id),ph=gv('am-p-'+id),note=gv('am-note-'+id);
+  var err=ge('am-err-'+id);
+  if(!n){if(err){err.textContent='Vui lòng nhập họ và tên!';err.style.display='flex';}return;}
+  if(!r.members) r.members=[];
+  r.members.push({name:n,phone:ph,note:note});
+  r.people=1+r.members.length;
+  autoSave();closeM('m-am-'+id);toast('Đã thêm '+n+' vào phòng!');
+  App.back();R.push('rd',Scr.roomDetail(r));
+}
+function removeMember(id,idx){
+  var r=S.rooms.find(function(x){return x.id===id;});if(!r||!r.members)return;
+  var name=r.members[idx]?r.members[idx].name:'';
+  r.members.splice(idx,1);
+  r.people=1+r.members.length;
+  autoSave();toast('Đã xóa '+name+' khỏi danh sách.');
+  App.back();R.push('rd',Scr.roomDetail(r));
+}
+function doCheckout(id){
+  var r=S.rooms.find(function(x){return x.id===id;});if(!r)return;
+  S.acts.unshift({txt:r.id+' · Trả phòng: '+(r.tenant||''),time:timeLabel(),c:'rose'});
+  r.status='empty';r.tenant='';r.phone='';r.checkin='';r.people=0;r.members=[];
+  delete S.meters[id];delete S.bills[id];
+  autoSave();closeM('m-co-'+id);toast('Đã trả phòng!');App.back();R.push('rd',Scr.roomDetail(r));
+}
+function prevM(ep,wp,rp){
+  var isFixed=(S.prices.waterMode==='fixed');
+  var ev=parseFloat(gv('me'))||0;
+  var wv=isFixed?1:parseFloat(gv('mw'))||0; // dummy 1 so calc triggers in fixed mode
+  var ei=ge('ei'),ee=ge('ee'),cp=ge('cprev');
+  var wi=ge('wi'),we=ge('we');
+
+  // Electricity validation
+  if(ev&&ev<ep){
+    if(ee){ee.textContent='⚠️ Chỉ số điện phải ≥ '+ep+'!';ee.style.display='flex';}
+    if(ei) ei.style.display='none';
+  } else if(ev){
+    if(ee) ee.style.display='none';
+    if(ei){ei.textContent='Tiêu thụ: '+(ev-ep)+' kWh';ei.style.display='block';}
+  } else {
+    if(ee) ee.style.display='none';
+    if(ei) ei.style.display='none';
+  }
+
+  // Water validation (only if meter mode)
+  if(!isFixed){
+    var rawWv=parseFloat(gv('mw'))||0;
+    if(rawWv&&rawWv<wp){
+      if(we){we.textContent='⚠️ Chỉ số nước phải ≥ '+wp+'!';we.style.display='flex';}
+      if(wi) wi.style.display='none';
+    } else if(rawWv){
+      if(we) we.style.display='none';
+      if(wi){wi.textContent='Tiêu thụ: '+(rawWv-wp)+' m³';wi.style.display='block';}
+    } else {
+      if(we) we.style.display='none';
+      if(wi) wi.style.display='none';
+    }
+    wv=rawWv;
+  }
+
+  // Preview calculation
+  var canCalc = isFixed ? (ev>=ep&&ev) : (ev>=ep&&wv>=wp&&ev&&wv);
+  if(canCalc){
+    var p=S.prices;
+    var ea=(ev-ep)*p.elec;
+    var wa=isFixed?p.waterFixed:(wv-wp)*p.water;
+    var prevDebt=0; // not known here without roomId, skip
+    var tot=rp+ea+wa+p.wifi+p.garbage;
+    var cpE=ge('cp-e'),cpW=ge('cp-w'),cpT=ge('cp-t');
+    if(cpE) cpE.textContent=fmt(ea)+' đ';
+    if(cpW) cpW.textContent=fmt(wa)+' đ';
+    if(cpT) cpT.textContent=fmt(tot)+' đ';
+    if(cp) cp.style.display='block';
+  }
+}
+
+function saveMeter(id,ep,wp){
+  var isFixed=(S.prices.waterMode==='fixed');
+  var ev=parseFloat(gv('me'))||0;
+  var ee=ge('ee'),we=ge('we');
+  var ok=true;
+
+  if(!ev||ev<ep){
+    if(ee){ee.textContent='⚠️ Chỉ số điện không hợp lệ (≥ '+ep+')!';ee.style.display='flex';}
+    ok=false;
+  } else {
+    if(ee) ee.style.display='none';
+  }
+
+  var wv=0;
+  if(isFixed){
+    wv=wp; // no input needed, use prev as placeholder
+  } else {
+    wv=parseFloat(gv('mw'))||0;
+    if(!wv||wv<wp){
+      if(we){we.textContent='⚠️ Chỉ số nước không hợp lệ (≥ '+wp+')!';we.style.display='flex';}
+      ok=false;
+    } else {
+      if(we) we.style.display='none';
+    }
+  }
+
+  if(!ok) return;
+  S.meters[id]={elec:ev,water:isFixed?null:wv,date:gv('md')||new Date().toISOString().split('T')[0]};
+  S.acts.unshift({txt:id+' · Đã ghi điện nước',time:timeLabel(),c:'pr'});
+  autoSave();
+  toast('Lưu chỉ số thành công!');
+  var meEl=ge('me'),mwEl=ge('mw'),cpEl=ge('cprev');
+  if(meEl) meEl.value='';
+  if(mwEl) mwEl.value='';
+  if(cpEl) cpEl.style.display='none';
+}
+
+function saveMeterBill(id,ep,wp){
+  var isFixed=(S.prices.waterMode==='fixed');
+  var ev=parseFloat(gv('me'))||0;
+  var ee=ge('ee'),we=ge('we');
+  var ok=true;
+
+  if(!ev||ev<ep){
+    if(ee){ee.textContent='⚠️ Chỉ số điện không hợp lệ!';ee.style.display='flex';}
+    ok=false;
+  } else {
+    if(ee) ee.style.display='none';
+  }
+
+  var wv=0;
+  if(isFixed){
+    wv=wp;
+  } else {
+    wv=parseFloat(gv('mw'))||0;
+    if(!wv||wv<wp){
+      if(we){we.textContent='⚠️ Chỉ số nước không hợp lệ!';we.style.display='flex';}
+      ok=false;
+    } else {
+      if(we) we.style.display='none';
+    }
+  }
+
+  if(!ok) return;
+  S.meters[id]={elec:ev,water:isFixed?null:wv,date:new Date().toISOString().split('T')[0]};
+  App.back();App.goBill(id);
+}
+function sendZalo(id,name,total){
+  if(!S.bills[id])S.bills[id]={};
+  S.bills[id].sent=true;S.bills[id].total=total;S.bills[id].date=new Date().toLocaleDateString('vi');
+  S.acts.unshift({txt:id+' · Gửi hóa đơn Zalo',time:timeLabel(),c:'sky'});
+  autoSave();
+  toast('Đã gửi hóa đơn qua Zalo!');
+  var el=ge('bst-'+id);
+  if(el){el.style.display='block';el.style.background='#e0f2fe';el.innerHTML='<div style="font-size:14px;font-weight:800;color:#075985">Đã gửi hóa đơn</div><div style="font-size:12px;color:#64748b;margin-top:2px;font-weight:600">'+S.bills[id].date+'</div>';}
+}
+function markCollected(id,total){
+  if(!S.bills[id])S.bills[id]={};
+  S.bills[id].collected=true;S.bills[id].total=total;S.bills[id].date=new Date().toLocaleDateString('vi');
+  S.acts.unshift({txt:id+' · Đã thu tiền',time:timeLabel(),c:'pr'});
+  autoSave();
+  toast('Đã đánh dấu thu tiền!');
+  var el=ge('bst-'+id);
+  if(el){el.style.display='block';el.style.background='#f0fdf4';el.innerHTML='<div style="font-size:14px;font-weight:800;color:#15803d">Đã thu tiền</div>';}
+  var cb=ge('bcol-'+id);if(cb)cb.style.display='none';
+}
+function collectDebt(id,total){markCollected(id,total);App.tab('debt');}
+function sendAll(){
+  var p=debtRooms().filter(function(r){return !S.bills[r.id]||!S.bills[r.id].sent;});
+  p.forEach(function(r){var dc=calcBill(r);if(!S.bills[r.id])S.bills[r.id]={};S.bills[r.id].sent=true;S.bills[r.id].total=dc.total;S.bills[r.id].date=new Date().toLocaleDateString('vi');});
+  autoSave();
+  toast('Đã gửi '+p.length+' hóa đơn qua Zalo!');App.tab('debt');
+}
+function filterRooms(){
+  var q=(gv('rsrch')||'').toLowerCase(),f=document.getElementById('rfil').value;
+  var res=S.rooms.filter(function(r){return (!q||r.name.toLowerCase().includes(q)||r.tenant.toLowerCase().includes(q))&&(f==='all'||r.status===f);});
+  var sc=ge('rscr');if(sc)sc.innerHTML=renderGrid(res);
+}
+function fDebt(btn,mode){
+  document.querySelectorAll('.segwrap .seg').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');
+  document.querySelectorAll('#dlist .dcard').forEach(function(c){c.style.display=(mode==='all'||c.dataset.ds===mode)?'':'none';});
+}
+var _le=false;
+function toggleLodge(){
+  _le=!_le;var v=ge('li-view'),e=ge('li-edit'),b=ge('li-btn');
+  if(v&&e&&b){v.style.display=_le?'none':'block';e.style.display=_le?'flex':'none';b.textContent=_le?'Hủy':'Sửa';}
+}
+
+var _ai=false;
+function toggleAccInfo(){
+  _ai=!_ai;var v=ge('ai-view'),e=ge('ai-edit'),b=ge('ai-btn');
+  if(v&&e&&b){v.style.display=_ai?'none':'block';e.style.display=_ai?'flex':'none';b.innerHTML=_ai?(I.back+' Hủy'):(I.edit+' Sửa');}
+}
+function saveAccInfo(){
+  var n=gv('ai-n'), em=gv('ai-em'), err=ge('ai-err');
+  if(!err) return;
+  if(!n){err.textContent='Vui lòng nhập họ và tên!';err.style.display='flex';return;}
+  if(em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){err.textContent='Email không hợp lệ!';err.style.display='flex';return;}
+  err.style.display='none';
+  if(S.user){
+    var acc=S.accounts.find(function(a){return a.phone===S.user.phone;});
+    if(acc){acc.name=n;if(em)acc.email=em;}
+    S.user.name=n;
+  }
+  _ai=true;toggleAccInfo();autoSave();toast('Cập nhật thành công!');
+  // Re-render screen to show new email
+  App.back();R.push('accinfo',Scr.accInfo());
+}
+function saveLodge(){
+  S.lodge.name=gv('li-n')||S.lodge.name;S.lodge.address=gv('li-a')||S.lodge.address;
+  S.lodge.phone=gv('li-p')||S.lodge.phone;S.lodge.bank=gv('li-b')||S.lodge.bank;S.lodge.bankName=gv('li-bn')||S.lodge.bankName;
+  autoSave();_le=true;toggleLodge();toast('Cập nhật thành công!');
+}
+function savePrices(){
+  S.prices.elec=parseInt(gv('pr-e'))||S.prices.elec;
+  if(S.prices.waterMode==='meter') S.prices.water=parseInt(gv('pr-w'))||S.prices.water;
+  else S.prices.waterFixed=parseInt(gv('pr-wfx'))||S.prices.waterFixed;
+  S.prices.wifi=parseInt(gv('pr-wf'))||S.prices.wifi;
+  S.prices.garbage=parseInt(gv('pr-g'))||S.prices.garbage;
+  autoSave();toast('Đã cập nhật đơn giá!');App.back();
+}
+
+function setWaterMode(mode){
+  S.prices.waterMode=mode;
+  var segs=document.querySelectorAll('.seg');
+  // just toggle visibility
+  var mr=ge('water-meter-row'),fr=ge('water-fixed-row');
+  if(mr) mr.style.display=mode==='meter'?'':'none';
+  if(fr) fr.style.display=mode==='fixed'?'':'none';
+  // update seg buttons
+  var allSegs=document.querySelectorAll('.segwrap .seg');
+  allSegs.forEach(function(s){
+    if(s.textContent.indexOf('công tơ')!==-1) s.classList.toggle('on',mode==='meter');
+    if(s.textContent.indexOf('cố định')!==-1) s.classList.toggle('on',mode==='fixed');
+  });
+}
+
+function checkLateEntry(dateVal){
+  if(!dateVal) return;
+  var d=new Date(dateVal);
+  var late=(d.getMonth()!==S.currentMonthIdx||d.getFullYear()!==S.currentYear);
+  var notice=ge('late-notice');
+  if(notice) notice.style.display=late?'flex':'none';
+  if(late){
+    var mn=S.currentMonthIdx===0?11:S.currentMonthIdx-1;
+    var yr=S.currentMonthIdx===0?S.currentYear-1:S.currentYear;
+    var lbl=ge('late-month-lbl');
+    if(lbl) lbl.textContent='Tháng '+(mn+1)+' / '+yr;
+  }
+}
+// ── CHANGE PASSWORD FLOW ──
+var _cpwOtp = '';
+var _cpwTimerInterval = null;
+
+function cpwStep1(){
+  var o=gv('cp-o'), err=ge('cp-err1'); if(!S.user||!err)return;
+  var acc=S.accounts.find(function(a){return a.phone===S.user.phone;});
+  if(!acc||acc.password!==o){
+    err.textContent='Mật khẩu hiện tại không đúng!';err.style.display='flex';return;
+  }
+  if(!acc.email){
+    err.textContent='Tài khoản chưa có email. Vui lòng cập nhật email trong phần thông tin tài khoản.';err.style.display='flex';return;
+  }
+  err.style.display='none';
+  _cpwOtp = String(Math.floor(100000+Math.random()*900000));
+  toast('Mã OTP '+_cpwOtp+' đã gửi về email của bạn');
+  var s1=ge('cpw-step1'),s2=ge('cpw-step2');
+  if(s1) s1.style.display='none';
+  if(s2) s2.style.display='flex';
+  cpwStartTimer();
+}
+
+function cpwStep2(){
+  var entered=gv('cp-otp').replace(/\s/g,'');
+  var err=ge('cp-err2'); if(!err)return;
+  if(!entered||entered.length<6){err.textContent='Vui lòng nhập đủ 6 chữ số!';err.style.display='flex';return;}
+  if(entered!==_cpwOtp){err.textContent='Mã OTP không đúng. Kiểm tra lại hoặc gửi lại mã.';err.style.display='flex';return;}
+  err.style.display='none';
+  clearInterval(_cpwTimerInterval);
+  var s2=ge('cpw-step2'),s3=ge('cpw-step3');
+  if(s2) s2.style.display='none';
+  if(s3) s3.style.display='flex';
+}
+
+function cpwBack(){
+  clearInterval(_cpwTimerInterval);
+  var s1=ge('cpw-step1'),s2=ge('cpw-step2'),otp=ge('cp-otp'),err=ge('cp-err2');
+  if(s2) s2.style.display='none';
+  if(s1) s1.style.display='block';
+  if(otp) otp.value='';
+  if(err) err.style.display='none';
+}
+
+function cpwResend(){
+  _cpwOtp=String(Math.floor(100000+Math.random()*900000));
+  toast('Mã OTP mới '+_cpwOtp+' đã gửi về email của bạn');
+  var err=ge('cp-err2'),otp=ge('cp-otp');
+  if(err) err.style.display='none';
+  if(otp) otp.value='';
+  clearInterval(_cpwTimerInterval);
+  cpwStartTimer();
+}
+
+function cpwStartTimer(){
+  var secs=300;
+  var el=ge('cp-timer');
+  if(!el)return;
+  function update(){
+    if(secs<=0){clearInterval(_cpwTimerInterval);if(el)el.textContent='Hết hạn';return;}
+    var m=Math.floor(secs/60), s=secs%60;
+    if(el) el.textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    secs--;
+  }
+  update();
+  _cpwTimerInterval=setInterval(update,1000);
+}
+
+function doChangePw(){
+  var n=gv('cp-n'),n2=gv('cp-n2'),err=ge('cp-err3');if(!S.user||!err)return;
+  var acc=S.accounts.find(function(a){return a.phone===S.user.phone;});
+  if(!n||n.length<6){err.textContent='Mật khẩu mới phải ít nhất 6 ký tự!';err.style.display='flex';return;}
+  if(n!==n2){err.textContent='Mật khẩu nhập lại không khớp!';err.style.display='flex';return;}
+  if(acc) acc.password=n;
+  err.style.display='none';
+  clearInterval(_cpwTimerInterval);
+  autoSave();
+  toast('Đổi mật khẩu thành công!');App.back();
+}
+// ── TIME LABEL ──
+function timeLabel(){
+  var n=new Date();
+  return n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes()+' '+n.toLocaleDateString('vi');
+}
+
+// ── BACKUP / RESTORE ──
+function doBackup(){
+  var data={
+    lodge:S.lodge, prices:S.prices, rooms:S.rooms,
+    meters:S.meters, bills:S.bills, debtPrev:S.debtPrev,
+    accounts:S.accounts, notifications:S.notifications,
+    onboardingDone:S.onboardingDone, acts:S.acts,
+    currentMonthIdx:S.currentMonthIdx, currentYear:S.currentYear
+  };
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='backup_apptro_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+  toast('Đã xuất file backup!');
+}
+
+function doRestore(){
+  var ta=document.querySelector('#m-rst textarea');
+  if(!ta||!ta.value.trim()){toast('⚠️ Vui lòng dán nội dung JSON vào ô trên!');return;}
+  try {
+    var data=JSON.parse(ta.value.trim());
+    if(!data.rooms||!data.lodge){toast('⚠️ File backup không hợp lệ!');return;}
+    S.lodge=data.lodge;S.prices=data.prices||S.prices;
+    S.rooms=data.rooms;S.meters=data.meters||{};
+    S.bills=data.bills||{};S.debtPrev=data.debtPrev||{};
+    S.accounts=data.accounts||S.accounts;
+    S.notifications=data.notifications||[];
+    S.onboardingDone=data.onboardingDone||false;
+    S.acts=data.acts||[];
+    autoSave();
+    closeM('m-rst');
+    toast('Khôi phục dữ liệu thành công!');
+    App.tab('home');
+  } catch(e){
+    toast('⚠️ Lỗi đọc file: '+e.message);
+  }
+}
+
+// ── FORGOT PASSWORD FLOW ──
+var _fpOtp = '';
+var _fpPhone = '';
+var _fpTimerInterval = null;
+
+function fpStep1(){
+  var em = (gv('fp-em') || '').trim().toLowerCase();
+  var err = ge('fp-err1');
+  if(!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){
+    err.textContent = '⚠️ Vui lòng nhập địa chỉ email hợp lệ!';
+    err.style.display = 'flex'; return;
+  }
+  var acc = S.accounts.find(function(a){ return a.email && a.email.toLowerCase() === em; });
+  if(!acc){
+    err.textContent = '⚠️ Email này chưa được đăng ký tài khoản nào!';
+    err.style.display = 'flex'; return;
+  }
+  err.style.display = 'none';
+  _fpPhone = acc.phone;
+  _fpOtp = String(Math.floor(100000 + Math.random() * 900000));
+
+  // mask email for display
+  var masked = em.replace(/(.{2})(.*)(@.*)/, function(_,a,b,c){ return a + b.replace(/./g,'*') + c; });
+  var showEl = ge('fp-email-show');
+  if(showEl) showEl.textContent = masked;
+
+  // Show OTP in toast (simulate email send in demo)
+  toast('Mã OTP: ' + _fpOtp + '  (Mã đã được gửi tới ' + masked + ')');
+
+  ge('fp-s1').style.display = 'none';
+  ge('fp-s2').style.display = 'flex';
+  fpStartTimer();
+}
+
+function fpStep2(){
+  var entered = (gv('fp-otp') || '').trim();
+  var err = ge('fp-err2');
+  if(!entered || entered.length < 6){
+    err.textContent = '⚠️ Vui lòng nhập đủ 6 chữ số!';
+    err.style.display = 'flex'; return;
+  }
+  if(entered !== _fpOtp){
+    err.textContent = '⚠️ Mã OTP không đúng. Kiểm tra lại hoặc gửi lại mã.';
+    err.style.display = 'flex'; return;
+  }
+  err.style.display = 'none';
+  clearInterval(_fpTimerInterval);
+  ge('fp-s2').style.display = 'none';
+  ge('fp-s3').style.display = 'flex';
+}
+
+function fpStep3(){
+  var pw = gv('fp-npw'), pw2 = gv('fp-npw2');
+  var err = ge('fp-err3');
+  if(!pw || pw.length < 6){
+    err.textContent = '⚠️ Mật khẩu mới phải ít nhất 6 ký tự!';
+    err.style.display = 'flex'; return;
+  }
+  if(pw !== pw2){
+    err.textContent = '⚠️ Mật khẩu nhập lại không khớp!';
+    err.style.display = 'flex'; return;
+  }
+  var acc = S.accounts.find(function(a){ return a.phone === _fpPhone; });
+  if(acc) acc.password = pw;
+  err.style.display = 'none';
+  // reset modal state
+  fpResetModal();
+  closeM('m-forgot');
+  toast('Đặt lại mật khẩu thành công! Đăng nhập lại nhé.');
+}
+
+function fpBack(){
+  clearInterval(_fpTimerInterval);
+  ge('fp-s2').style.display = 'none';
+  ge('fp-s1').style.display = 'block';
+  ge('fp-otp').value = '';
+  ge('fp-err2').style.display = 'none';
+}
+
+function fpResend(){
+  _fpOtp = String(Math.floor(100000 + Math.random() * 900000));
+  var acc = S.accounts.find(function(a){ return a.phone === _fpPhone; });
+  var masked = acc && acc.email ? acc.email.replace(/(.{2})(.*)(@.*)/, function(_,a,b,c){ return a+b.replace(/./g,'*')+c; }) : '';
+  toast('Mã OTP mới: ' + _fpOtp + ')');
+  ge('fp-otp').value = '';
+  ge('fp-err2').style.display = 'none';
+  clearInterval(_fpTimerInterval);
+  fpStartTimer();
+}
+
+function fpStartTimer(){
+  var secs = 300;
+  var el = ge('fp-timer');
+  function update(){
+    if(!ge('fp-timer')){ clearInterval(_fpTimerInterval); return; }
+    if(secs <= 0){ clearInterval(_fpTimerInterval); el.textContent = 'Hết hạn'; el.style.color = '#94a3b8'; return; }
+    var m = Math.floor(secs/60), s = secs % 60;
+    el.textContent = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    secs--;
+  }
+  update();
+  _fpTimerInterval = setInterval(update, 1000);
+}
+
+function fpResetModal(){
+  clearInterval(_fpTimerInterval);
+  _fpOtp = ''; _fpPhone = '';
+  var s1=ge('fp-s1'),s2=ge('fp-s2'),s3=ge('fp-s3');
+  if(s1){ s1.style.display='block'; var e=ge('fp-err1'); if(e) e.style.display='none'; var p=ge('fp-em'); if(p) p.value=''; }
+  if(s2){ s2.style.display='none'; var e=ge('fp-err2'); if(e) e.style.display='none'; var o=ge('fp-otp'); if(o) o.value=''; }
+  if(s3){ s3.style.display='none'; var e=ge('fp-err3'); if(e) e.style.display='none'; var p=ge('fp-npw'); if(p) p.value=''; var p2=ge('fp-npw2'); if(p2) p2.value=''; }
+}
+
+function qrError(id){
+  var wrap=ge('qr-wrap-'+id);
+  if(!wrap) return;
+  wrap.innerHTML='<div style="width:160px;height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#94a3b8">'+
+  '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+
+  '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>'+
+  '<rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/>'+
+  '<rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/>'+
+  '<rect x="18" y="18" width="3" height="3"/></svg>'+
+  '<div style="font-size:11px;font-weight:600;text-align:center;line-height:1.5">Cập nhật tên ngân hàng<br>chuẩn VietQR trong<br>Cài đặt</div>'+
+  '</div>';
+}
+
+// ── CLOCK (real-time, every second) ──
+function tick(){
+  var n=new Date(),c=ge('clk');
+  if(c) c.textContent=n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();
+}
+setInterval(tick,1000); tick();
+
+// ── BOOT ──
+(function(){
+  var loaded = loadState();
+  if(loaded && S.accounts.length > 0 && S.user){
+    // Re-login: check if user was logged in (we don't persist user session for security)
+    S.user = null; // always require login on fresh boot
+  }
+  checkMonthlyReminders();
+  R.push('login', Scr.login());
+}());
+</script>
+</body>
+</html>

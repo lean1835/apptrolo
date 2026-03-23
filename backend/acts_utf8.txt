@@ -1,0 +1,5 @@
+﻿id	txt	time	color	user_id	type
+1	Tạo phòng mới: Pdjf	2026-03-21 13:41:07	NULL	5	room
+2	Tạo phòng mới: Kxxj	2026-03-21 13:45:26	NULL	5	room
+3	P.206 · Thêm thành viên: Djx	2026-03-21 13:45:44	NULL	5	member
+4	phòng 103 · Đã ghi điện nước	2026-03-21 13:52:52	NULL	5	meter
