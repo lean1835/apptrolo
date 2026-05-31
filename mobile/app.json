@@ -22,8 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.tro.lolo",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.tro.lolo"
     },
     "web": {
       "output": "static",
@@ -47,6 +46,15 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c7986f85-27b8-47b2-9c4e-651c6af979bc"
+      }
+    },
+    "owner": "lean1803"
   }
+  
+  
 }
