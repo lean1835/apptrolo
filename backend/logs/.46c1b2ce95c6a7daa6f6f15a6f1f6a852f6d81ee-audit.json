@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "D:\\Projects\\Apptrololo\\backend\\logs\\.46c1b2ce95c6a7daa6f6f15a6f1f6a852f6d81ee-audit.json",
+    "files": [
+        {
+            "date": 1779509678989,
+            "name": "D:\\Projects\\Apptrololo\\backend\\logs\\combined-2026-05-23.log",
+            "hash": "e57ac186b4f75b6b3646865910152139095687d4f93c4bf3127f9110eb0ac63f"
+        },
+        {
+            "date": 1779555626484,
+            "name": "D:\\Projects\\Apptrololo\\backend\\logs\\combined-2026-05-24.log",
+            "hash": "b2758b47de90751684c6b2e975d436f54d9b7ce7fd10403729c2783e62ab5868"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -1,0 +1,127 @@
+// @ts-nocheck
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { LanguageProvider } from '../src/context/LanguageContext';
+import { useEffect } from 'react';
+import { View, ActivityIndicator, Alert, Platform, LogBox } from 'react-native';
+import { COLORS } from '../src/styles/Theme';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+
+LogBox.ignoreLogs([
+  'expo-notifications',
+  'expo-media-library',
+  'Missing Expo Project ID',
+]);
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+function AppLayout() {
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    async function registerForPushNotificationsAsync() {
+      let token;
+
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
+      }
+
+      if (Device.isDevice) {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') {
+          Alert.alert('Lỗi', 'Không thể xin quyền gửi thông báo!');
+          return;
+        }
+        try {
+          const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+          if (!projectId) {
+            console.warn('Missing Expo Project ID (EAS). Push notifications will not work. Run "eas project:init" to configure push notifications.');
+          } else {
+            token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+            console.log('Expo Push Token:', token);
+          }
+        } catch (e) {
+          token = `${e}`;
+          console.error('Lỗi lấy token:', token);
+        }
+      } else {
+        console.log('Must use physical device for Push Notifications');
+      }
+
+      return token;
+    }
+
+    registerForPushNotificationsAsync();
+
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Nhận được thông báo:', notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Click vào thông báo:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener);
+      Notifications.removeNotificationSubscription(responseListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!user && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } else if (user && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [user, loading, segments]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg }}>
+        <ActivityIndicator size="large" color={COLORS.pr} />
+      </View>
+    );
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+    </Stack>
+  );
+}
+
+export default function Root() {
+  return (
+    <LanguageProvider>
+      <AuthProvider>
+        <AppLayout />
+      </AuthProvider>
+    </LanguageProvider>
+  );
+}

@@ -1,0 +1,74 @@
+stages:
+  - verify
+  - build
+  - deploy
+
+variables:
+  DOCKER_REGISTRY: "registry.gitlab.com"
+  IMAGE_NAME: "lean1835/apptrolo/backend"
+  STAGING_SERVER_IP: "192.168.1.100" # Replace with real VPS IP
+  PRODUCTION_SERVER_IP: "192.168.1.200" # Replace with real VPS IP
+
+check_lint:
+  stage: verify
+  image: node:20-alpine
+  script:
+    - yarn install --pure-lockfile
+    - yarn tsc --noEmit
+  only:
+    - merge_requests
+    - develop
+    - production
+
+build_staging:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $DOCKER_REGISTRY
+    - docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:staging -f Dockerfile .
+    - docker push $DOCKER_REGISTRY/$IMAGE_NAME:staging
+  only:
+    - develop
+
+build_production:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $DOCKER_REGISTRY
+    - docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile .
+    - docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
+  only:
+    - production
+
+deploy_staging:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no deploy@$STAGING_SERVER_IP "cd /app && docker-compose pull && docker-compose up -d"
+  only:
+    - develop
+
+deploy_production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no deploy@$PRODUCTION_SERVER_IP "cd /app && docker-compose pull && docker-compose up -d"
+  only:
+    - production
+  when: manual

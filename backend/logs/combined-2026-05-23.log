@@ -1,0 +1,261 @@
+2026-05-23 11:15:09 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 11:15:09 [info]: ✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456
+2026-05-23 11:15:09 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 11:15:09 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 11:15:38 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 11:15:38 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 11:15:38 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 11:15:38 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 11:15:56 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 11:15:56 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 11:15:56 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 11:15:56 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 11:16:23 [error]: TypeError: Cannot set property query of #<IncomingMessage> which has only a getter
+    at trimRequest (D:\Projects\Apptrololo\backend\src\common\middlewares\trim.middleware.ts:19:27)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+    at D:\Projects\Apptrololo\backend\node_modules\router\index.js:297:9
+    at processParams (D:\Projects\Apptrololo\backend\node_modules\router\index.js:582:12)
+    at next (D:\Projects\Apptrololo\backend\node_modules\router\index.js:291:5)
+    at cookieParser (D:\Projects\Apptrololo\backend\node_modules\cookie-parser\index.js:57:14)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+    at D:\Projects\Apptrololo\backend\node_modules\router\index.js:297:9
+2026-05-23 11:16:30 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 11:16:30 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 11:16:30 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 11:16:30 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 11:16:53 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 11:16:54 [info]: ✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456
+2026-05-23 11:16:54 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 11:16:54 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 12:50:12 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 12:50:12 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 12:50:12 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 12:50:12 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:02:46 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 13:02:46 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 13:02:46 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 13:02:46 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:18:28 [info]: [LogActivity] User: 6a112a35192bb527ff58ba43, Text: "Tạo phòng mới: F", Type: room
+2026-05-23 13:20:53 [error]: TypeError: obj.hasOwnProperty is not a function
+    at trimInPlace (D:\Projects\Apptrololo\backend\src\common\middlewares\trim.middleware.ts:6:15)
+    at trimRequest (D:\Projects\Apptrololo\backend\src\common\middlewares\trim.middleware.ts:19:18)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+    at D:\Projects\Apptrololo\backend\node_modules\router\index.js:297:9
+    at processParams (D:\Projects\Apptrololo\backend\node_modules\router\index.js:582:12)
+    at next (D:\Projects\Apptrololo\backend\node_modules\router\index.js:291:5)
+    at cookieParser (D:\Projects\Apptrololo\backend\node_modules\cookie-parser\index.js:57:14)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+2026-05-23 13:25:12 [error]: TypeError: obj.hasOwnProperty is not a function
+    at trimInPlace (D:\Projects\Apptrololo\backend\src\common\middlewares\trim.middleware.ts:6:15)
+    at trimRequest (D:\Projects\Apptrololo\backend\src\common\middlewares\trim.middleware.ts:19:18)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+    at D:\Projects\Apptrololo\backend\node_modules\router\index.js:297:9
+    at processParams (D:\Projects\Apptrololo\backend\node_modules\router\index.js:582:12)
+    at next (D:\Projects\Apptrololo\backend\node_modules\router\index.js:291:5)
+    at cookieParser (D:\Projects\Apptrololo\backend\node_modules\cookie-parser\index.js:57:14)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+2026-05-23 13:31:21 [info]: [LogActivity] User: 6a112a35192bb527ff58ba43, Text: "Tạo phòng mới: 101", Type: room
+2026-05-23 13:32:04 [error]: TypeError: obj.hasOwnProperty is not a function
+    at trimInPlace (D:\Projects\Apptrololo\backend\src\common\middlewares\trim.middleware.ts:6:15)
+    at trimRequest (D:\Projects\Apptrololo\backend\src\common\middlewares\trim.middleware.ts:19:18)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+    at D:\Projects\Apptrololo\backend\node_modules\router\index.js:297:9
+    at processParams (D:\Projects\Apptrololo\backend\node_modules\router\index.js:582:12)
+    at next (D:\Projects\Apptrololo\backend\node_modules\router\index.js:291:5)
+    at cookieParser (D:\Projects\Apptrololo\backend\node_modules\cookie-parser\index.js:57:14)
+    at Layer.handleRequest (D:\Projects\Apptrololo\backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Projects\Apptrololo\backend\node_modules\router\index.js:342:13)
+2026-05-23 13:32:42 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 13:32:42 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 13:32:42 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 13:32:42 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 13:32:42 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 13:32:42 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:32:42 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 13:32:42 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:33:52 [info]: [LogActivity] User: 6a112a35192bb527ff58ba43, Text: "Tạo phòng mới: 124", Type: room
+2026-05-23 13:38:47 [info]: [LogActivity] User: 6a112a35192bb527ff58ba43, Text: "Tạo phòng mới: X", Type: room
+2026-05-23 13:42:40 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 13:42:40 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 13:42:40 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 13:42:40 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:46:56 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 13:46:56 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 13:46:56 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 13:46:56 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:48:10 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 13:48:10 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 13:48:10 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 13:48:10 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:52:16 [error]: MongooseServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at _handleConnectionErrors (D:\Projects\Apptrololo\backend\node_modules\mongoose\lib\connection.js:1169:11)
+    at NativeConnection.openUri (D:\Projects\Apptrololo\backend\node_modules\mongoose\lib\connection.js:1100:11)
+    at connectDatabase (D:\Projects\Apptrololo\backend\src\common\config\database.ts:7:5)
+    at bootstrap (D:\Projects\Apptrololo\backend\src\server.ts:57:3)
+2026-05-23 13:55:57 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 13:55:58 [info]: ✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456
+2026-05-23 13:55:58 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 13:55:58 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 13:56:25 [info]: [LogActivity] User: 6a114f7e2187e2e146884242, Text: "Tạo phòng mới: T", Type: room
+2026-05-23 14:04:55 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 14:04:55 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 14:04:55 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 14:04:55 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 14:05:10 [info]: [LogActivity] User: 6a114f7e2187e2e146884242, Text: "T · Khách mới: V", Type: member
+2026-05-23 14:05:19 [info]: [LogActivity] User: 6a114f7e2187e2e146884242, Text: "T · Đã ghi điện nước", Type: meter
+2026-05-23 14:59:16 [info]: [LogActivity] User: 6a114f7e2187e2e146884242, Text: "T · Lưu nháp hóa đơn 276.006 đ", Type: bill
+2026-05-23 15:07:46 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:07:46 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:07:46 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:07:46 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:07:51 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:07:51 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:07:51 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:07:51 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:08:01 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:08:01 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:08:01 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:08:01 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:08:08 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:08:08 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:08:08 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:08:08 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:08:12 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:08:12 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:08:13 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:08:13 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:15:10 [info]: [LogActivity] User: 6a114f7e2187e2e146884242, Text: "Tạo phòng mới: P2", Type: room
+2026-05-23 15:15:52 [info]: [LogActivity] User: 6a114f7e2187e2e146884242, Text: "P2 · Khách mới: E", Type: member
+2026-05-23 15:17:20 [info]: [LogActivity] User: 6a114f7e2187e2e146884242, Text: "P2 · Thêm thành viên: Annn", Type: member
+2026-05-23 15:19:01 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:19:01 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:19:01 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:19:01 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:19:08 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:19:08 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:19:08 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:19:08 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:19:17 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:19:17 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:19:17 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:19:17 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:19:25 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:19:25 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:19:25 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:19:25 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:19:34 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:19:34 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:19:34 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:19:34 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:21:10 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:21:10 [info]: ✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456
+2026-05-23 15:21:10 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:21:10 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:28:51 [info]: [LogActivity] User: 6a11637682984ce2c4258a36, Text: "Tạo phòng mới: Phòng 1", Type: room
+2026-05-23 15:29:12 [info]: [LogActivity] User: 6a11637682984ce2c4258a36, Text: "Phòng 1 · Khách mới: Lê văn an", Type: member
+2026-05-23 15:30:19 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:30:19 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:30:19 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:30:19 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:30:43 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:30:43 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:30:43 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:30:43 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:31:03 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:31:03 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:31:03 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:31:03 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:31:25 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:31:25 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:31:25 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:31:25 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:34:40 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:34:40 [info]: ✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456
+2026-05-23 15:34:40 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:34:40 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:37:15 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: Phòng", Type: room
+2026-05-23 15:37:24 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng · Khách mới: Lê an", Type: member
+2026-05-23 15:42:17 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng · Khách mới: An", Type: member
+2026-05-23 15:42:33 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng · Thêm thành viên: Trang", Type: member
+2026-05-23 15:43:19 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: R", Type: room
+2026-05-23 15:43:40 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "R · Khách mới: U", Type: member
+2026-05-23 15:48:30 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: Phòng 2", Type: room
+2026-05-23 15:51:07 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng 2 · Khách mới: Djdh", Type: member
+2026-05-23 15:52:12 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 15:52:12 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 15:52:12 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 15:52:12 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 15:52:39 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng · Đã ghi điện nước", Type: meter
+2026-05-23 16:05:11 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 16:05:11 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 16:05:11 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 16:05:11 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 16:10:16 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng 2 · Đã ghi điện nước", Type: meter
+2026-05-23 16:12:25 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "R · Đã ghi điện nước", Type: meter
+2026-05-23 16:37:47 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 16:37:47 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 16:37:47 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 16:37:47 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 16:41:40 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: Phòng bar", Type: room
+2026-05-23 16:52:35 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Xóa phòng: Phòng bar", Type: room
+2026-05-23 16:52:53 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: Phòng pay lắk", Type: room
+2026-05-23 16:53:11 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng pay lắk · Khách mới: Japanit Matcha", Type: member
+2026-05-23 16:53:34 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng pay lắk · Đã ghi điện nước", Type: meter
+2026-05-23 16:54:21 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng 2 · Đã thu tiền 638.323 đ", Type: bill
+2026-05-23 17:18:11 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: An", Type: room
+2026-05-23 17:18:26 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "An · Khách mới: Thuy", Type: member
+2026-05-23 17:18:39 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "An · Đã ghi điện nước", Type: meter
+2026-05-23 17:23:19 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: P2", Type: room
+2026-05-23 17:23:36 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "P2 · Khách mới: Fj", Type: member
+2026-05-23 17:24:55 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "P2 · Đã ghi điện nước", Type: meter
+2026-05-23 17:28:18 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: R", Type: room
+2026-05-23 17:28:27 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "R · Khách mới: Êcc", Type: member
+2026-05-23 17:31:44 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "R · Đã ghi điện nước", Type: meter
+2026-05-23 17:32:13 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: O4", Type: room
+2026-05-23 17:32:17 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Xóa phòng: O4", Type: room
+2026-05-23 17:32:29 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: P4", Type: room
+2026-05-23 17:32:42 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "P4 · Khách mới: U", Type: member
+2026-05-23 17:33:02 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "P4 · Đã ghi điện nước", Type: meter
+2026-05-23 17:33:48 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: Phòng ann", Type: room
+2026-05-23 17:34:02 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng ann · Khách mới: Fidi", Type: member
+2026-05-23 17:34:11 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Phòng ann · Đã ghi điện nước", Type: meter
+2026-05-23 17:34:54 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: P5", Type: room
+2026-05-23 17:35:15 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "P5 · Khách mới: Dh", Type: member
+2026-05-23 17:35:24 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "P5 · Đã ghi điện nước", Type: meter
+2026-05-23 17:44:33 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: J", Type: room
+2026-05-23 17:44:40 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "J · Khách mới: A", Type: member
+2026-05-23 17:48:33 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: R", Type: room
+2026-05-23 17:48:44 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "R · Khách mới: Fjfj", Type: member
+2026-05-23 17:48:53 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "R · Đã ghi điện nước", Type: meter
+2026-05-23 17:52:44 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "P5 · Đã thu tiền 7.448.332 đ", Type: bill
+2026-05-23 22:16:53 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 22:16:54 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 22:16:54 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 22:16:54 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 22:24:49 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: p44", Type: room
+2026-05-23 22:40:34 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Xóa phòng: P4", Type: room
+2026-05-23 22:51:18 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Xóa phòng: Test Delete Room", Type: room
+2026-05-23 22:53:09 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Xóa phòng: R", Type: room
+2026-05-23 22:54:13 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: phòng test", Type: room
+2026-05-23 22:55:18 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "phòng test · Khách mới: lê an tỏ", Type: member
+2026-05-23 23:08:21 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: pt1", Type: room
+2026-05-23 23:08:39 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "pt1 · Khách mới: jkbịh", Type: member
+2026-05-23 23:08:48 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "pt1 · Đã ghi điện nước", Type: meter
+2026-05-23 23:11:02 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "phòng test · Đã ghi điện nước", Type: meter
+2026-05-23 23:30:12 [info]: ✅ Successfully connected to MongoDB database
+2026-05-23 23:30:12 [info]: ℹ️ Seeder: Default user already exists.
+2026-05-23 23:30:13 [info]: 🚀 Server running in development mode on port 8080
+2026-05-23 23:30:13 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-05-23 23:52:58 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Tạo phòng mới: Pt2", Type: room
+2026-05-23 23:53:08 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Pt2 · Khách mới: Thi c", Type: member
+2026-05-23 23:53:44 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Pt2 · Đã ghi điện nước", Type: meter
+2026-05-23 23:54:05 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Pt2 · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-05-23 23:54:05 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "Pt2 · Đã thu tiền 25.062.865 đ", Type: bill
+2026-05-23 23:56:13 [info]: [LogActivity] User: 6a1166a0ecc6d520f4564737, Text: "p44 · Khách mới: G", Type: member

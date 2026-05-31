@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "D:\\Projects\\Apptrololo\\backend\\logs\\.8dd240bfcd4b196d394f7fe6892026ff2f28f034-audit.json",
+    "files": [
+        {
+            "date": 1779509678987,
+            "name": "D:\\Projects\\Apptrololo\\backend\\logs\\error-2026-05-23.log",
+            "hash": "ef7c403ebf40b2a8ee1988b08407afa40ff3422500fb8630e24a243286693935"
+        },
+        {
+            "date": 1779556096525,
+            "name": "D:\\Projects\\Apptrololo\\backend\\logs\\error-2026-05-24.log",
+            "hash": "218c0cb5d0ee576a34d12bac58f5bcd78ad749d77462541240fa46d7dec39941"
+        }
+    ],
+    "hashType": "sha256"
+}
