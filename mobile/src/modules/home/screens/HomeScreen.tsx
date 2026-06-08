@@ -41,81 +41,63 @@ const HomeScreen = ({ navigation }) => {
 
   const fetchData = useCallback(async () => {
     try {
-      let dashboard;
-      try {
-        const res = await axiosInstance.get('/lodge/dashboard');
-        dashboard = res.data?.data || {};
-      } catch (dashboardErr) {
-        console.warn('Dashboard endpoint failed, falling back to individual queries:', dashboardErr);
-        const getLodge = axiosInstance.get('/lodge').catch(() => ({ data: { name: 'Nhà trọ' } }));
-        const getRooms = axiosInstance.get('/rooms').catch(() => ({ data: [] }));
-        const getBills = axiosInstance.get('/bills').catch(() => ({ data: [] }));
-        const getActivities = axiosInstance.get('/activities').catch(() => ({ data: [] }));
+      const getLodge = axiosInstance.get('/lodge').catch(() => ({ data: { name: 'Nhà trọ' } }));
+      const getRooms = axiosInstance.get('/rooms').catch(() => ({ data: [] }));
+      const getBills = axiosInstance.get('/bills').catch(() => ({ data: [] }));
+      const getActivities = axiosInstance.get('/activities').catch(() => ({ data: [] }));
 
-        const [lodgeRes, roomsRes, billsRes, actRes] = await Promise.all([getLodge, getRooms, getBills, getActivities]);
-        
-        const rooms = roomsRes.data || [];
-        const bills = billsRes.data || [];
+      const [lodgeRes, roomsRes, billsRes, actRes] = await Promise.all([getLodge, getRooms, getBills, getActivities]);
+      
+      const rooms = roomsRes.data || [];
+      const bills = billsRes.data || [];
 
-        // Count occupied and debt status as occupied ("Có khách")
-        const occ = rooms.filter(r => ['occupied', 'Occupied', 'debt', 'Debt'].includes(r.status)).length;
-        const emp = rooms.filter(r => ['empty', 'Empty'].includes(r.status)).length;
-        const debt = rooms.filter(r => {
-          const checkinDateStr = r.checkin || '';
-          const roomBills = bills.filter(b => b.roomId === r.id && (!checkinDateStr || b.date >= checkinDateStr));
-          const unpaidCount = roomBills.filter(b => !b.collected).length;
-          return unpaidCount > 0 || r.status === 'debt' || r.status === 'Debt';
-        }).length;
-        
-        const now = new Date();
-        const thisMonth = now.getMonth();
-        const thisYear = now.getFullYear();
-        
-        const collectedThisMonth = bills
-          .filter(b => b.collected && new Date(b.updatedAt || b.date).getMonth() === thisMonth && new Date(b.updatedAt || b.date).getFullYear() === thisYear)
-          .reduce((sum, b) => sum + (Number(b.total) || 0), 0);
+      const occ = rooms.filter(r => r.status === 'occupied' || r.status === 'Occupied').length;
+      const emp = rooms.filter(r => r.status === 'empty' || r.status === 'Empty').length;
+      const debt = rooms.filter(r => {
+        const checkinDateStr = r.checkin || '';
+        const roomBills = bills.filter(b => b.roomId === r.id && (!checkinDateStr || b.date >= checkinDateStr));
+        const unpaidCount = roomBills.filter(b => !b.collected).length;
+        return unpaidCount > 0 || r.status === 'debt' || r.status === 'Debt';
+      }).length;
+      
+      const now = new Date();
+      const thisMonth = now.getMonth();
+      const thisYear = now.getFullYear();
+      
+      const collectedThisMonth = bills
+        .filter(b => b.collected && new Date(b.updatedAt || b.date).getMonth() === thisMonth && new Date(b.updatedAt || b.date).getFullYear() === thisYear)
+        .reduce((sum, b) => sum + (Number(b.total) || 0), 0);
 
-        const pendingBillsCount = bills.filter(b => {
-          if (b.collected) return false;
-          const r = rooms.find(room => room.id === b.roomId);
-          if (!r) return false;
-          const isOcc = r.status === 'occupied' || r.status === 'Occupied' || r.status === 'debt' || r.status === 'Debt';
-          if (!isOcc) return false;
-          const checkinDateStr = r.checkin || '';
-          return !checkinDateStr || b.date >= checkinDateStr;
-        }).length;
-        
-        const roomsWithBill = new Set();
-        bills.forEach(b => {
-          const r = rooms.find(room => room.id === b.roomId);
-          const checkinDateStr = r?.checkin || '';
-          if (new Date(b.date).getMonth() === thisMonth && (!checkinDateStr || b.date >= checkinDateStr)) {
-            roomsWithBill.add(b.roomId);
-          }
-        });
+      const pendingBillsCount = bills.filter(b => {
+        if (b.collected) return false;
+        const r = rooms.find(room => room.id === b.roomId);
+        if (!r) return false;
+        const isOcc = r.status === 'occupied' || r.status === 'Occupied' || r.status === 'debt' || r.status === 'Debt';
+        if (!isOcc) return false;
+        const checkinDateStr = r.checkin || '';
+        return !checkinDateStr || b.date >= checkinDateStr;
+      }).length;
+      
+      const roomsWithBill = new Set();
+      bills.forEach(b => {
+        const r = rooms.find(room => room.id === b.roomId);
+        const checkinDateStr = r?.checkin || '';
+        if (new Date(b.date).getMonth() === thisMonth && (!checkinDateStr || b.date >= checkinDateStr)) {
+          roomsWithBill.add(b.roomId);
+        }
+      });
 
-        const roomsWithReading = new Set();
-        rooms.forEach(r => {
-          const checkinDateStr = r.checkin || '';
-          if (r.meterReadings?.some(m => new Date(m.date).getMonth() === thisMonth && (!checkinDateStr || m.date >= checkinDateStr))) {
-            roomsWithReading.add(r.id);
-          }
-        });
-        
-        const occRooms = rooms.filter(r => ['occupied', 'Occupied', 'debt', 'Debt'].includes(r.status));
-        const roomsNeedMeter = occRooms.filter(r => !roomsWithReading.has(r.id)).length;
-        const roomsNeedBill = occRooms.filter(r => roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)).length;
-
-        dashboard = {
-          lodge: lodgeRes.data,
-          stats: { occ, unc: debt, emp },
-          revenue: collectedThisMonth,
-          pendingBills: pendingBillsCount,
-          roomsNeedMeter: roomsNeedMeter,
-          roomsNeedBill: roomsNeedBill,
-          activities: actRes.data || []
-        };
-      }
+      const roomsWithReading = new Set();
+      rooms.forEach(r => {
+        const checkinDateStr = r.checkin || '';
+        if (r.meterReadings?.some(m => new Date(m.date).getMonth() === thisMonth && (!checkinDateStr || m.date >= checkinDateStr))) {
+          roomsWithReading.add(r.id);
+        }
+      });
+      
+      const occRooms = rooms.filter(r => r.status === 'occupied' || r.status === 'Occupied');
+      const roomsNeedMeter = occRooms.filter(r => !roomsWithReading.has(r.id)).length;
+      const roomsNeedBill = occRooms.filter(r => roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)).length;
 
       const parseDate = (dateStr) => {
         if (!dateStr) return new Date();
@@ -125,7 +107,7 @@ const HomeScreen = ({ navigation }) => {
         return new Date(dateStr);
       };
 
-      const realActivities = (dashboard.activities || []).map(act => ({
+      const realActivities = (actRes.data || []).map(act => ({
           txt: act.txt,
           type: act.type,
           collected: act.collected,
@@ -133,12 +115,12 @@ const HomeScreen = ({ navigation }) => {
       }));
 
       setData({
-        lodge: dashboard.lodge || { name: 'Nhà trọ' },
-        stats: dashboard.stats || { occ: 0, unc: 0, emp: 0 },
-        revenue: dashboard.revenue || 0,
-        pendingBills: dashboard.pendingBills || 0,
-        roomsNeedMeter: dashboard.roomsNeedMeter || 0,
-        roomsNeedBill: dashboard.roomsNeedBill || 0,
+        lodge: lodgeRes.data,
+        stats: { occ, unc: debt, emp },
+        revenue: collectedThisMonth,
+        pendingBills: pendingBillsCount,
+        roomsNeedMeter: roomsNeedMeter,
+        roomsNeedBill: roomsNeedBill,
         activities: realActivities,
         notifications: [],
         onboardingDone: true
@@ -157,7 +139,7 @@ const HomeScreen = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-      const interval = setInterval(fetchData, 15000); // Poll every 15s
+      const interval = setInterval(fetchData, 5000); // Poll every 5s
       return () => clearInterval(interval);
     }, [fetchData])
   );

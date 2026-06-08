@@ -29,24 +29,17 @@ export interface IRoomHistoryItem {
 export class RoomService {
   public async getRoomsByLodge(lodgeId: string): Promise<IRoom[]> {
     return await RoomModel.find({ lodge: lodgeId })
-      .populate({
-        path: 'meterReadings',
-        options: { sort: { date: -1 }, limit: 2 }
-      })
+      .populate('members')
+      .populate('meterReadings')
+      .populate('bills')
       .populate('tenant');
   }
 
   public async getRoomById(roomId: string): Promise<IRoom> {
     const room = await RoomModel.findById(roomId)
       .populate('members')
-      .populate({
-        path: 'meterReadings',
-        options: { sort: { date: -1 } }
-      })
-      .populate({
-        path: 'bills',
-        options: { sort: { date: -1 } }
-      })
+      .populate('meterReadings')
+      .populate('bills')
       .populate('tenant');
     if (!room) {
       throw new ApiError(404, 'Không tìm thấy phòng trọ');

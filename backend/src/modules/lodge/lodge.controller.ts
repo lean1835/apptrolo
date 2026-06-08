@@ -21,12 +21,3 @@ export const updateLodge = catchAsync(async (req: Request, res: Response) => {
     data: lodge,
   });
 });
-
-export const getDashboard = catchAsync(async (req: Request, res: Response) => {
-  const data = await lodgeService.getDashboard(req.users._id);
-  res.status(200).json({
-    success: true,
-    message: 'Lấy dữ liệu tổng quan thành công',
-    data,
-  });
-});

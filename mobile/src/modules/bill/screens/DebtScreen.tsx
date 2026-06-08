@@ -159,7 +159,7 @@ const DebtScreen = ({ navigation }) => {
       if (params.filter) {
         setFilter(params.filter);
       }
-      const interval = setInterval(fetchDebt, 15000); // Poll every 15s
+      const interval = setInterval(fetchDebt, 5000); // Poll every 5s
       return () => clearInterval(interval);
     }, [fetchDebt, params.filter])
   );

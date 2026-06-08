@@ -52,7 +52,7 @@ const RoomsScreen = () => {
 
          const toHighlight = new Set();
          data.forEach(r => {
-            if (['occupied', 'Occupied', 'debt', 'Debt'].includes(r.status) && roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)) {
+            if ((r.status === 'occupied' || r.status === 'Occupied') && roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)) {
                toHighlight.add(r.id);
             }
          });
@@ -71,7 +71,7 @@ const RoomsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       fetchRooms();
-      const interval = setInterval(fetchRooms, 15000); // Poll every 15s
+      const interval = setInterval(fetchRooms, 5000); // Poll every 5s
       return () => clearInterval(interval);
     }, [fetchRooms])
   );
@@ -185,7 +185,7 @@ const RoomsScreen = () => {
       return (!checkinDateStr || m.date >= checkinDateStr) && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
     });
     
-    const isOccupiedVal = ['occupied', 'Occupied', 'debt', 'Debt'].includes(item.status);
+    const isOccupiedVal = item.status === 'occupied' || item.status === 'Occupied';
     const showEarlyWarning = isOccupiedVal && isEarly && !hasReading;
 
     const unpaidBills = roomBills.filter(b => !b.collected);

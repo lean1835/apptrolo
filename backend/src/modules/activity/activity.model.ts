@@ -17,6 +17,6 @@ const ActivitySchema = new Schema<IActivity>(
   }
 );
 
-ActivitySchema.index({ user: 1, time: -1 }, { name: 'idx_activity_user_time', background: true });
+ActivitySchema.index({ user: 1 }, { name: 'idx_activity_user', background: true });
 
 export default mongoose.model<IActivity>('Activities', ActivitySchema);
