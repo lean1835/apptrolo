@@ -1,11 +1,15 @@
 import { Tabs } from 'expo-router';
 import { HomeIcon, DoorIcon, MoneyIcon, SettingsIcon } from '../../src/assets/Icons';
 import { COLORS } from '../../src/styles/Theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-  const TabBarIcon = (Icon) => ({ color, size }) => (
-    <Icon color={color} size={22} />
-  );
+  const insets = useSafeAreaInsets();
+  const TabBarIcon = (Icon) => {
+    const IconComponent = ({ color, size }) => <Icon color={color} size={22} />;
+    IconComponent.displayName = 'TabBarIcon';
+    return IconComponent;
+  };
 
   return (
     <Tabs
@@ -17,8 +21,8 @@ export default function TabLayout() {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: COLORS.g5,
-          height: 65,
-          paddingBottom: 20,
+          height: 55 + insets.bottom,
+          paddingBottom: insets.bottom || 8,
           paddingTop: 6,
         },
         tabBarLabelStyle: {

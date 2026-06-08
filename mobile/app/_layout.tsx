@@ -2,6 +2,7 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { LanguageProvider } from '../src/context/LanguageContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Platform, LogBox } from 'react-native';
 import { COLORS } from '../src/styles/Theme';
@@ -29,6 +30,12 @@ function AppLayout() {
   const router = useRouter();
 
   useEffect(() => {
+    // Skip remote notifications setup if running in Expo Go (removed in SDK 53)
+    if (Constants.appOwnership === 'expo') {
+      console.log('Bypassing remote push notification setup in Expo Go');
+      return;
+    }
+
     async function registerForPushNotificationsAsync() {
       let token;
 
@@ -82,8 +89,8 @@ function AppLayout() {
     });
 
     return () => {
-      Notifications.removeNotificationSubscription(notificationListener);
-      Notifications.removeNotificationSubscription(responseListener);
+      notificationListener.remove();
+      responseListener.remove();
     };
   }, []);
 
@@ -118,10 +125,12 @@ function AppLayout() {
 
 export default function Root() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <AppLayout />
-      </AuthProvider>
-    </LanguageProvider>
+    <SafeAreaProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppLayout />
+        </AuthProvider>
+      </LanguageProvider>
+    </SafeAreaProvider>
   );
 }

@@ -7,11 +7,13 @@ import { useAuth } from '../../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '../../../context/LanguageContext';
 import { validateWhitespace } from '../../../utils/formUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LoginScreen: React.FC = () => {
   const router = useRouter();
   const { t } = useLanguage();
   const { login } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [phone, setPhone] = useState<string>('0912345678');
   const [password, setPassword] = useState<string>('123456');
@@ -45,11 +47,11 @@ const LoginScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       style={{ flex: 1 }}
     >
       <ScrollView contentContainerStyle={styles.container} bounces={false}>
-        <View style={styles.awrap}>
+        <View style={[styles.awrap, { paddingTop: Math.max(insets.top, 20), paddingBottom: Math.max(insets.bottom, 24) }]}>
           <View style={styles.alogo}>
             <BuildingIcon size={36} color="#fff" />
           </View>

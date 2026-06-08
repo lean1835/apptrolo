@@ -1,14 +1,16 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS, SIZES } from '../../../styles/Theme';
 import { BackIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AddRoomScreen = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -53,8 +55,12 @@ const AddRoomScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topbar}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      style={{ flex: 1 }}
+    >
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
           <BackIcon size={24} color={COLORS.g2} />
         </TouchableOpacity>
@@ -129,6 +135,7 @@ const AddRoomScreen = () => {
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 };
 

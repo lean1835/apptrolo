@@ -6,10 +6,12 @@ import { COLORS, SHADOWS, SIZES } from '../../../styles/Theme';
 import { BellIcon, BoltIcon, SendIcon, MoneyIcon, CheckIcon, DoorIcon, PlusIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [data, setData] = useState({
     lodge: { name: 'Đang tải...' },
     stats: { occ: 0, unc: 0, emp: 0 },
@@ -39,63 +41,8 @@ const HomeScreen = ({ navigation }) => {
 
   const fetchData = useCallback(async () => {
     try {
-      const getLodge = axiosInstance.get('/lodge').catch(() => ({ data: { name: 'Nhà trọ' } }));
-      const getRooms = axiosInstance.get('/rooms').catch(() => ({ data: [] }));
-      const getBills = axiosInstance.get('/bills').catch(() => ({ data: [] }));
-      const getActivities = axiosInstance.get('/activities').catch(() => ({ data: [] }));
-
-      const [lodgeRes, roomsRes, billsRes, actRes] = await Promise.all([getLodge, getRooms, getBills, getActivities]);
-      
-      const rooms = roomsRes.data || [];
-      const bills = billsRes.data || [];
-
-      const occ = rooms.filter(r => r.status === 'occupied' || r.status === 'Occupied').length;
-      const emp = rooms.filter(r => r.status === 'empty' || r.status === 'Empty').length;
-      const debt = rooms.filter(r => {
-        const checkinDateStr = r.checkin || '';
-        const roomBills = bills.filter(b => b.roomId === r.id && (!checkinDateStr || b.date >= checkinDateStr));
-        const unpaidCount = roomBills.filter(b => !b.collected).length;
-        return unpaidCount > 0 || r.status === 'debt' || r.status === 'Debt';
-      }).length;
-      
-      const now = new Date();
-      const thisMonth = now.getMonth();
-      const thisYear = now.getFullYear();
-      
-      const collectedThisMonth = bills
-        .filter(b => b.collected && new Date(b.updatedAt || b.date).getMonth() === thisMonth && new Date(b.updatedAt || b.date).getFullYear() === thisYear)
-        .reduce((sum, b) => sum + (Number(b.total) || 0), 0);
-
-      const pendingBillsCount = bills.filter(b => {
-        if (b.collected) return false;
-        const r = rooms.find(room => room.id === b.roomId);
-        if (!r) return false;
-        const isOcc = r.status === 'occupied' || r.status === 'Occupied' || r.status === 'debt' || r.status === 'Debt';
-        if (!isOcc) return false;
-        const checkinDateStr = r.checkin || '';
-        return !checkinDateStr || b.date >= checkinDateStr;
-      }).length;
-      
-      const roomsWithBill = new Set();
-      bills.forEach(b => {
-        const r = rooms.find(room => room.id === b.roomId);
-        const checkinDateStr = r?.checkin || '';
-        if (new Date(b.date).getMonth() === thisMonth && (!checkinDateStr || b.date >= checkinDateStr)) {
-          roomsWithBill.add(b.roomId);
-        }
-      });
-
-      const roomsWithReading = new Set();
-      rooms.forEach(r => {
-        const checkinDateStr = r.checkin || '';
-        if (r.meterReadings?.some(m => new Date(m.date).getMonth() === thisMonth && (!checkinDateStr || m.date >= checkinDateStr))) {
-          roomsWithReading.add(r.id);
-        }
-      });
-      
-      const occRooms = rooms.filter(r => r.status === 'occupied' || r.status === 'Occupied');
-      const roomsNeedMeter = occRooms.filter(r => !roomsWithReading.has(r.id)).length;
-      const roomsNeedBill = occRooms.filter(r => roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)).length;
+      const res = await axiosInstance.get('/lodge/dashboard');
+      const dashboard = res.data?.data || {};
 
       const parseDate = (dateStr) => {
         if (!dateStr) return new Date();
@@ -105,7 +52,7 @@ const HomeScreen = ({ navigation }) => {
         return new Date(dateStr);
       };
 
-      const realActivities = (actRes.data || []).map(act => ({
+      const realActivities = (dashboard.activities || []).map(act => ({
           txt: act.txt,
           type: act.type,
           collected: act.collected,
@@ -113,12 +60,12 @@ const HomeScreen = ({ navigation }) => {
       }));
 
       setData({
-        lodge: lodgeRes.data,
-        stats: { occ, unc: debt, emp },
-        revenue: collectedThisMonth,
-        pendingBills: pendingBillsCount,
-        roomsNeedMeter: roomsNeedMeter,
-        roomsNeedBill: roomsNeedBill,
+        lodge: dashboard.lodge || { name: 'Nhà trọ' },
+        stats: dashboard.stats || { occ: 0, unc: 0, emp: 0 },
+        revenue: dashboard.revenue || 0,
+        pendingBills: dashboard.pendingBills || 0,
+        roomsNeedMeter: dashboard.roomsNeedMeter || 0,
+        roomsNeedBill: dashboard.roomsNeedBill || 0,
         activities: realActivities,
         notifications: [],
         onboardingDone: true
@@ -137,7 +84,7 @@ const HomeScreen = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-      const interval = setInterval(fetchData, 5000); // Poll every 5s
+      const interval = setInterval(fetchData, 15000); // Poll every 15s
       return () => clearInterval(interval);
     }, [fetchData])
   );
@@ -150,7 +97,7 @@ const HomeScreen = ({ navigation }) => {
         colors={['#166534', '#16a34a', '#22c55e']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.hero}
+        style={[styles.hero, { paddingTop: Math.max(insets.top, 18) }]}
       >
         <View style={styles.heroHeader}>
           <Text style={styles.hlodge}>{data.lodge.name}</Text>

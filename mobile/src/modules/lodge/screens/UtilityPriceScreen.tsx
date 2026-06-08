@@ -1,14 +1,16 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
 import { BackIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const UtilityPriceScreen = () => {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({
@@ -67,8 +69,12 @@ const UtilityPriceScreen = () => {
     if (loading) return <View style={styles.loading}><ActivityIndicator color={COLORS.pr} /></View>;
 
     return (
-        <View style={styles.container}>
-            <View style={styles.topbar}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+            style={{ flex: 1 }}
+        >
+        <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+            <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
                 <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
                     <BackIcon size={24} color={COLORS.g2} />
                 </TouchableOpacity>
@@ -148,6 +154,7 @@ const UtilityPriceScreen = () => {
                 />
             </ScrollView>
         </View>
+        </KeyboardAvoidingView>
     );
 };
 

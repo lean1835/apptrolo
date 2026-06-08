@@ -6,19 +6,14 @@
     "auditLog": "D:\\Projects\\Apptrololo\\backend\\logs\\.46c1b2ce95c6a7daa6f6f15a6f1f6a852f6d81ee-audit.json",
     "files": [
         {
-            "date": 1779509678989,
-            "name": "D:\\Projects\\Apptrololo\\backend\\logs\\combined-2026-05-23.log",
-            "hash": "e57ac186b4f75b6b3646865910152139095687d4f93c4bf3127f9110eb0ac63f"
-        },
-        {
-            "date": 1779555626484,
-            "name": "D:\\Projects\\Apptrololo\\backend\\logs\\combined-2026-05-24.log",
-            "hash": "b2758b47de90751684c6b2e975d436f54d9b7ce7fd10403729c2783e62ab5868"
-        },
-        {
             "date": 1780225260850,
             "name": "D:\\Projects\\Apptrololo\\backend\\logs\\combined-2026-05-31.log",
             "hash": "8864597abec6a12af219d9958a53d096da0e4c2692bfb59f66f9477a188e2188"
+        },
+        {
+            "date": 1780922746213,
+            "name": "D:\\Projects\\Apptrololo\\backend\\logs\\combined-2026-06-08.log",
+            "hash": "e2554847c740c74d81728d6040bf63428aead7e842444259dfe9f84ee48b0002"
         }
     ],
     "hashType": "sha256"

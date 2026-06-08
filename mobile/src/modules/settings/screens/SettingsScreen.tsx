@@ -7,8 +7,10 @@ import { useAuth } from '../../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import axiosInstance from '../../../services/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SettingsScreen = () => {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, logout } = useAuth();
   const [lodge, setLodge] = useState(null);
@@ -50,7 +52,7 @@ const SettingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topbar}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <Text style={styles.tbtitle}>Cài đặt</Text>
       </View>
       

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
 import { BackIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
 import { validateWhitespace } from '../../../utils/formUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ChangePasswordScreen: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [saving, setSaving] = useState<boolean>(false);
   const [form, setForm] = useState({
     oldPassword: '',
@@ -49,8 +51,12 @@ const ChangePasswordScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topbar}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      style={{ flex: 1 }}
+    >
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
           <BackIcon size={24} color={COLORS.g2} />
         </TouchableOpacity>
@@ -92,6 +98,7 @@ const ChangePasswordScreen: React.FC = () => {
         />
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 };
 

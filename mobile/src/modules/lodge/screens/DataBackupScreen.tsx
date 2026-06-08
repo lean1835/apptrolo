@@ -1,14 +1,16 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
 import { BackIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button } from '../../../components/Common';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DataBackupScreen = () => {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(false);
     const [jsonText, setJsonText] = useState('');
 
@@ -52,8 +54,12 @@ const DataBackupScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.topbar}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+            style={{ flex: 1 }}
+        >
+        <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+            <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
                 <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
                     <BackIcon size={24} color={COLORS.g2} />
                 </TouchableOpacity>
@@ -96,6 +102,7 @@ const DataBackupScreen = () => {
                 {loading && <ActivityIndicator size="large" color={COLORS.pr} style={{ marginTop: 20 }} />}
             </ScrollView>
         </View>
+        </KeyboardAvoidingView>
     );
 };
 

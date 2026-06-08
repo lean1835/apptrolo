@@ -9,6 +9,7 @@ import { CaptureView, captureRef } from '../../../utils/capture';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Bill {
   id?: string;
@@ -76,6 +77,7 @@ const BillScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
+  const insets = useSafeAreaInsets();
   
   const [room, setRoom] = useState<Room | null>(null);
   const [prices, setPrices] = useState<UtilityPrices | null>(null);
@@ -338,8 +340,8 @@ const BillScreen: React.FC = () => {
   if (!room || !prices || !lodge) return <View style={styles.loading}><Text>{t('loadingData')}</Text></View>;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topbar}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
           <BackIcon size={24} color={COLORS.g2} />
         </TouchableOpacity>

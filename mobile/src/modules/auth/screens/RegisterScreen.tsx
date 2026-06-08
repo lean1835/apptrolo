@@ -6,9 +6,11 @@ import { Input, Button } from '../../../components/Common';
 import { BackIcon } from '../../../assets/Icons';
 import { useAuth } from '../../../context/AuthContext';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const RegisterScreen = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -40,10 +42,10 @@ const RegisterScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      style={{ flex: 1, paddingBottom: insets.bottom }}
     >
-      <View style={styles.topbar}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
           <BackIcon size={24} color={COLORS.g2} />
         </TouchableOpacity>

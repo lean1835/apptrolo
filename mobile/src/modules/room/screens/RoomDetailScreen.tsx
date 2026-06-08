@@ -7,10 +7,12 @@ import { BackIcon, UserIcon, BoltIcon, MoneyIcon, ReceiptIcon, DoorIcon, Restore
 import axiosInstance from '../../../services/api';
 import { Badge, Button } from '../../../components/Common';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const RoomDetailScreen = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -318,8 +320,8 @@ const RoomDetailScreen = () => {
   const { isEarly, expectedDate } = getEarlyWarningInfo();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topbar}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <TouchableOpacity 
           style={styles.tbback} 
           onPress={() => {

@@ -6,8 +6,10 @@ import { MoneyIcon, SendIcon, CheckIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Badge, Button } from '../../../components/Common';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DebtScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [debtRooms, setDebtRooms] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
@@ -157,7 +159,7 @@ const DebtScreen = ({ navigation }) => {
       if (params.filter) {
         setFilter(params.filter);
       }
-      const interval = setInterval(fetchDebt, 5000); // Poll every 5s
+      const interval = setInterval(fetchDebt, 15000); // Poll every 15s
       return () => clearInterval(interval);
     }, [fetchDebt, params.filter])
   );
@@ -203,7 +205,7 @@ const DebtScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topbar}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <Text style={styles.tbtitle}>Công nợ</Text>
       </View>
       

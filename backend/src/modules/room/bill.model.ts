@@ -18,6 +18,6 @@ const BillSchema = new Schema<IBill>(
   }
 );
 
-BillSchema.index({ room: 1 }, { name: 'idx_bill_room', background: true });
+BillSchema.index({ room: 1, date: -1 }, { name: 'idx_bill_room_date', background: true });
 
 export default mongoose.model<IBill>('Bills', BillSchema);

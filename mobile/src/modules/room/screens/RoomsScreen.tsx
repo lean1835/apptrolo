@@ -7,11 +7,13 @@ import axiosInstance from '../../../services/api';
 import { Badge } from '../../../components/Common';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 const RoomsScreen = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const highlightNeedsBill = params.highlightNeedsBill === 'true';
   
@@ -69,7 +71,7 @@ const RoomsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       fetchRooms();
-      const interval = setInterval(fetchRooms, 5000); // Poll every 5s
+      const interval = setInterval(fetchRooms, 15000); // Poll every 15s
       return () => clearInterval(interval);
     }, [fetchRooms])
   );
@@ -256,7 +258,7 @@ const RoomsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topbar}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
         <Text style={styles.tbtitle}>Danh sách phòng</Text>
       </View>
       
