@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
@@ -7,11 +7,14 @@ import { BackIcon, CheckIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardPadding } from '../../../hooks/useKeyboardPadding';
 
 const AddTenantScreen = () => {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const scrollRef = useRef(null);
+    const kbHeight = useKeyboardPadding(scrollRef);
     const [room, setRoom] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -85,16 +88,15 @@ const AddTenantScreen = () => {
         setSaving(true);
         try {
             const updatedRoom = {
-                ...room,
+                name: room.name,
+                price: room.price,
+                status: 'occupied',
                 tenant: form.tenant,
                 phone: form.phone,
                 people: 1, // Default to 1 (the tenant)
-                status: 'occupied',
                 checkin: form.checkin,
                 contract: form.contract,
                 contractPrepaid: parseInt(form.contractPrepaid) || 0,
-                ep: room.ep,
-                wp: room.wp,
             };
             await axiosInstance.put(`/rooms/${id}`, updatedRoom);
             Alert.alert("Thành công", "Đã cập nhật thông tin khách thuê");
@@ -110,7 +112,7 @@ const AddTenantScreen = () => {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1 }}
         >
         <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -122,7 +124,7 @@ const AddTenantScreen = () => {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
                 <View style={styles.card}>
                     <Text style={styles.htit}>Thông tin cơ bản</Text>
                     <Input 
@@ -193,7 +195,7 @@ const AddTenantScreen = () => {
                     style={{ marginTop: 10 }}
                 />
                 
-                <View style={{ height: 40 }} />
+                <View style={{ height: Math.max(40, kbHeight) }} />
             </ScrollView>
 
             {/* Custom DatePicker Modal */}

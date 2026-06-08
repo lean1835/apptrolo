@@ -26,3 +26,66 @@
 2026-06-08 21:21:03 [info]: ℹ️ Seeder: Default user already exists.
 2026-06-08 21:21:03 [info]: 🚀 Server running in development mode on port 8080
 2026-06-08 21:21:03 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-08 21:31:47 [info]: ✅ Successfully connected to MongoDB database
+2026-06-08 21:31:48 [info]: ℹ️ Seeder: Default user already exists.
+2026-06-08 21:31:48 [info]: 🚀 Server running in development mode on port 8080
+2026-06-08 21:31:48 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-08 21:49:36 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Khách mới: G", Type: member
+2026-06-08 21:50:03 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã ghi điện nước", Type: meter
+2026-06-08 21:52:13 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-08 21:52:13 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã thu tiền 2.496.006 đ", Type: bill
+2026-06-08 21:57:56 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: T", Type: room
+2026-06-08 21:58:06 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "T · Khách mới: H", Type: member
+2026-06-08 21:58:16 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "T · Đã ghi điện nước", Type: meter
+2026-06-08 21:58:50 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "T · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-08 21:58:50 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "T · Đã thu tiền 352.722 đ", Type: bill
+2026-06-08 22:00:06 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: K", Type: room
+2026-06-08 22:00:16 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "K · Khách mới: Hh", Type: member
+2026-06-08 22:00:32 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "K · Đã ghi điện nước", Type: meter
+2026-06-08 22:01:23 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "K · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-08 22:01:23 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "K · Đã thu tiền 1.138.499 đ", Type: bill
+2026-06-08 22:03:49 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: P466", Type: room
+2026-06-08 22:04:00 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P466 · Khách mới: G", Type: member
+2026-06-08 22:04:12 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P466 · Đã ghi điện nước", Type: meter
+2026-06-08 22:04:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P466 · Đã thu tiền 786.369 đ", Type: bill
+2026-06-08 22:04:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P466 · Đã thu tiền 786.369 đ", Type: bill
+2026-06-08 22:04:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P466 · Đã thu tiền 786.369 đ", Type: bill
+2026-06-08 22:04:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P466 · Đã thu tiền 786.369 đ", Type: bill
+2026-06-08 22:09:01 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: P2", Type: room
+2026-06-08 22:09:18 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Khách mới: Y", Type: member
+2026-06-08 22:09:44 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã ghi điện nước", Type: meter
+2026-06-08 22:11:11 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:11:11 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:11:11 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:11:11 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:11:11 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:12:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:12:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:12:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:12:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 220.000 đ", Type: bill
+2026-06-08 22:20:35 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: Rf", Type: room
+2026-06-08 22:20:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Rf · Khách mới: S", Type: member
+2026-06-08 22:21:12 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Rf · Đã ghi điện nước", Type: meter
+2026-06-08 22:21:48 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Rf · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-08 22:21:48 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Rf · Đã thu tiền 1.038.500 đ", Type: bill
+2026-06-08 22:21:49 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Rf · Đã thu tiền 1.020.000 đ", Type: bill
+2026-06-08 22:21:49 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Rf · Đã thu tiền 1.020.000 đ", Type: bill
+2026-06-08 22:21:49 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Rf · Đã thu tiền 1.020.000 đ", Type: bill
+2026-06-08 22:32:32 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: P2", Type: room
+2026-06-08 22:33:18 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Khách mới: A", Type: member
+2026-06-08 22:33:31 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã ghi điện nước", Type: meter
+2026-06-08 22:34:26 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-08 22:34:26 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 1.286.000 đ", Type: bill
+2026-06-08 22:34:27 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 675.500 đ", Type: bill
+2026-06-08 22:34:27 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã thu tiền 675.500 đ", Type: bill
+2026-06-08 22:37:47 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: P3", Type: room
+2026-06-08 22:38:05 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P3 · Khách mới: Th", Type: member
+2026-06-08 22:38:28 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P3 · Đã ghi điện nước", Type: meter
+2026-06-08 22:40:23 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: Gh", Type: room
+2026-06-08 22:40:36 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gh · Khách mới: F", Type: member
+2026-06-08 22:40:45 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gh · Đã ghi điện nước", Type: meter
+2026-06-08 22:47:42 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gh · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-08 22:47:42 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gh · Đã thu tiền 680.499 đ", Type: bill
+2026-06-08 22:47:43 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gh · Đã thu tiền 669.999 đ", Type: bill
+2026-06-08 22:47:43 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gh · Đã thu tiền 669.999 đ", Type: bill
+2026-06-08 22:48:59 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "P2 · Đã ghi điện nước", Type: meter

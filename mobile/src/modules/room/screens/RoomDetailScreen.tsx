@@ -18,11 +18,14 @@ const RoomDetailScreen = () => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyItems, setHistoryItems] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [prices, setPrices] = useState(null);
 
   const fetchRoom = async () => {
     try {
       const res = await axiosInstance.get(`/rooms/${id}?t=${new Date().getTime()}`);
       setRoom(res.data);
+      const resPrices = await axiosInstance.get(`/utility-prices`);
+      setPrices(resPrices.data);
     } catch (err) {
       console.error('Fetch room error:', err);
     } finally {
@@ -463,14 +466,23 @@ const RoomDetailScreen = () => {
                  <Text style={styles.meterLbl}>⚡ Điện kỳ này</Text>
                  <Text style={[styles.meterVal, { color: COLORS.pr }]}>{currElec !== null ? `${currElec} kWh` : 'Chưa ghi'}</Text>
               </View>
-              <View style={styles.meterRow}>
-                 <Text style={styles.meterLbl}>💧 Nước kỳ trước</Text>
-                 <Text style={styles.meterVal}>{prevWater} m³</Text>
-              </View>
-              <View style={styles.meterRow}>
-                 <Text style={styles.meterLbl}>💧 Nước kỳ này</Text>
-                 <Text style={[styles.meterVal, { color: COLORS.rose }]}>{currWater !== null ? `${currWater} m³` : 'Chưa ghi'}</Text>
-              </View>
+              {prices?.waterMode === 'fixed' ? (
+                <View style={styles.meterRow}>
+                   <Text style={styles.meterLbl}>💧 Nước</Text>
+                   <Text style={styles.meterVal}>Cố định</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.meterRow}>
+                     <Text style={styles.meterLbl}>💧 Nước kỳ trước</Text>
+                     <Text style={styles.meterVal}>{prevWater} m³</Text>
+                  </View>
+                  <View style={styles.meterRow}>
+                     <Text style={styles.meterLbl}>💧 Nước kỳ này</Text>
+                     <Text style={[styles.meterVal, { color: COLORS.rose }]}>{currWater !== null ? `${currWater} m³` : 'Chưa ghi'}</Text>
+                  </View>
+                </>
+              )}
             </View>
 
             <View style={styles.actionRow}>

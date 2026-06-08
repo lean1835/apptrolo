@@ -237,7 +237,12 @@ const BillScreen: React.FC = () => {
     return dMonths;
   }, [room, now]);
 
-  const fixedMonthlyCost = useMemo(() => stats.rent + stats.fees, [stats.rent, stats.fees]);
+  const fixedMonthlyCost = useMemo(() => {
+    const rent = stats.rent;
+    const fees = stats.fees;
+    const waterCost = prices?.waterMode === 'fixed' ? (prices.waterFixed || 0) : 0;
+    return rent + fees + waterCost;
+  }, [stats.rent, stats.fees, prices]);
   const priorDebt = useMemo(() => debtMonths >= 2 ? (debtMonths - 1) * fixedMonthlyCost : 0, [debtMonths, fixedMonthlyCost]);
   const finalTotal = useMemo(() => stats.total + priorDebt, [stats.total, priorDebt]);
 
@@ -442,14 +447,23 @@ const BillScreen: React.FC = () => {
               </View>
               <View style={styles.detailRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.dLbl}>
+                  <Text style={[
+                    styles.dLbl, 
+                    (prices.waterMode === 'fixed' && debtMonths >= 2) && { color: COLORS.rose }
+                  ]}>
                     {t('water')} {prices.waterMode === 'fixed' ? t('waterFixed') : `(${stats.wUse} m³)`}
+                    {(prices.waterMode === 'fixed' && debtMonths >= 2) ? ` ${t('rentMonths', { count: debtMonths })}` : ''}
                   </Text>
                   {prices.waterMode !== 'fixed' && (
                     <Text style={styles.dSub}>{t('electricityDetail', { prior: stats.pWaterValue, current: stats.cWater })}</Text>
                   )}
                 </View>
-                <Text style={styles.dVal}>{stats.wAmt.toLocaleString('vi')} đ</Text>
+                <Text style={[
+                  styles.dVal, 
+                  (prices.waterMode === 'fixed' && debtMonths >= 2) && { color: COLORS.rose }
+                ]}>
+                  {((stats.wAmt * (prices.waterMode === 'fixed' && debtMonths >= 2 ? debtMonths : 1))).toLocaleString('vi')} đ
+                </Text>
               </View>
               <View style={styles.detailRow}>
                 <Text style={[styles.dLbl, debtMonths >= 2 && { color: COLORS.rose }]}>

@@ -52,7 +52,7 @@ const ChangePasswordScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>

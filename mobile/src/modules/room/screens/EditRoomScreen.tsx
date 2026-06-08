@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
@@ -7,11 +7,14 @@ import { BackIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardPadding } from '../../../hooks/useKeyboardPadding';
 
 const EditRoomScreen = () => {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const scrollRef = useRef(null);
+    const kbHeight = useKeyboardPadding(scrollRef);
     const [room, setRoom] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -75,7 +78,7 @@ const EditRoomScreen = () => {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1 }}
         >
         <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -87,7 +90,7 @@ const EditRoomScreen = () => {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
                 <View style={styles.card}>
                     <Input 
                         label="Tên phòng" 
@@ -132,6 +135,7 @@ const EditRoomScreen = () => {
                     full 
                     style={{ marginTop: 10 }}
                 />
+                <View style={{ height: Math.max(0, kbHeight) }} />
             </ScrollView>
         </View>
         </KeyboardAvoidingView>

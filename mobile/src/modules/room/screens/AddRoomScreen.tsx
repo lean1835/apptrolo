@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS, SIZES } from '../../../styles/Theme';
@@ -7,10 +7,13 @@ import { BackIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardPadding } from '../../../hooks/useKeyboardPadding';
 
 const AddRoomScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef(null);
+  const kbHeight = useKeyboardPadding(scrollRef);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -20,6 +23,19 @@ const AddRoomScreen = () => {
     status: 'empty',
     descText: ''
   });
+
+  const [prices, setPrices] = useState(null);
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const resPrices = await axiosInstance.get(`/utility-prices`);
+        setPrices(resPrices.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchPrices();
+  }, []);
 
   const [errors, setErrors] = useState({});
 
@@ -56,7 +72,7 @@ const AddRoomScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
       <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -68,7 +84,7 @@ const AddRoomScreen = () => {
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.sectit}>Thông tin cơ bản</Text>
           <Input 
@@ -109,16 +125,20 @@ const AddRoomScreen = () => {
                 onChangeText={(txt) => setForm({...form, ep: txt})}
               />
             </View>
-            <View style={{ width: 15 }} />
-            <View style={{ flex: 1 }}>
-              <Input 
-                label="Chỉ số nước (m³)" 
-                placeholder="0"
-                keyboardType="numeric"
-                value={form.wp}
-                onChangeText={(txt) => setForm({...form, wp: txt})}
-              />
-            </View>
+            {prices?.waterMode !== 'fixed' && (
+              <>
+                <View style={{ width: 15 }} />
+                <View style={{ flex: 1 }}>
+                  <Input 
+                    label="Chỉ số nước (m³)" 
+                    placeholder="0"
+                    keyboardType="numeric"
+                    value={form.wp}
+                    onChangeText={(txt) => setForm({...form, wp: txt})}
+                  />
+                </View>
+              </>
+            )}
           </View>
         </View>
 
@@ -132,7 +152,7 @@ const AddRoomScreen = () => {
           {loading && <ActivityIndicator color={COLORS.pr} style={{ marginTop: 10 }} />}
         </View>
         
-        <View style={{ height: 40 }} />
+        <View style={{ height: Math.max(40, kbHeight) }} />
       </ScrollView>
     </View>
     </KeyboardAvoidingView>

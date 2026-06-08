@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
@@ -7,10 +7,13 @@ import { BackIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardPadding } from '../../../hooks/useKeyboardPadding';
 
 const UtilityPriceScreen = () => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const scrollRef = useRef(null);
+    const kbHeight = useKeyboardPadding(scrollRef);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({
@@ -70,7 +73,7 @@ const UtilityPriceScreen = () => {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1 }}
         >
         <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -82,7 +85,7 @@ const UtilityPriceScreen = () => {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
                 <View style={styles.card}>
                     <Text style={styles.hsub}>Điện & Nước</Text>
                     <Input 
@@ -152,6 +155,7 @@ const UtilityPriceScreen = () => {
                     full 
                     style={{ marginTop: 10 }}
                 />
+                <View style={{ height: Math.max(0, kbHeight) }} />
             </ScrollView>
         </View>
         </KeyboardAvoidingView>

@@ -83,7 +83,7 @@ export class RoomService {
 
       const oldTenantDoc = await TenantModel.findOne({ room: room._id });
       const oldTenantName = oldTenantDoc ? (oldTenantDoc.name || '').trim() : '';
-      const newTenantName = (payload.tenant || '').trim();
+      const newTenantName = payload.tenant !== undefined ? (payload.tenant || '').trim() : oldTenantName;
       const isCheckout =
         (payload.status === 'empty' || payload.status === 'Empty') &&
         !!oldTenantName &&
@@ -95,7 +95,7 @@ export class RoomService {
           `${room.name} · Trả phòng: ${oldTenantName}`,
           'checkout'
         );
-      } else if (newTenantName && newTenantName !== oldTenantName) {
+      } else if (payload.tenant !== undefined && newTenantName && newTenantName !== oldTenantName) {
         if (oldTenantName) {
           await activityService.logActivityByLodge(
             lodgeId,
@@ -110,37 +110,39 @@ export class RoomService {
         );
       }
 
-      // Update fields
-      room.name = payload.name;
-      room.price = payload.price;
-      room.status = payload.status;
-      room.descText = payload.descText || '';
-      room.people = payload.people || 0;
-      room.checkin = payload.checkin || '';
-      room.contract = payload.contract || 'monthly';
-      room.contractPrepaid = payload.contractPrepaid || 0;
-      room.ep = payload.ep || 0;
-      room.wp = payload.wp || 0;
+      // Update fields conditionally if present in payload
+      if (payload.name !== undefined) room.name = payload.name;
+      if (payload.price !== undefined) room.price = payload.price;
+      if (payload.status !== undefined) room.status = payload.status;
+      if (payload.descText !== undefined) room.descText = payload.descText;
+      if (payload.people !== undefined) room.people = payload.people;
+      if (payload.checkin !== undefined) room.checkin = payload.checkin;
+      if (payload.contract !== undefined) room.contract = payload.contract;
+      if (payload.contractPrepaid !== undefined) room.contractPrepaid = payload.contractPrepaid;
+      if (payload.ep !== undefined) room.ep = payload.ep;
+      if (payload.wp !== undefined) room.wp = payload.wp;
 
       await room.save();
     }
 
-    // Synchronize separate Tenants collection
-    if (payload.tenant) {
-      let tenantObj = await TenantModel.findOne({ room: room._id });
-      if (!tenantObj) {
-        tenantObj = new TenantModel({ room: room._id });
-      }
-      tenantObj.name = payload.tenant;
-      tenantObj.phone = payload.phone || '';
-      await tenantObj.save();
+    // Synchronize separate Tenants collection conditionally
+    if (payload.tenant !== undefined) {
+      if (payload.tenant) {
+        let tenantObj = await TenantModel.findOne({ room: room._id });
+        if (!tenantObj) {
+          tenantObj = new TenantModel({ room: room._id });
+        }
+        tenantObj.name = payload.tenant;
+        tenantObj.phone = payload.phone !== undefined ? payload.phone : (tenantObj.phone || '');
+        await tenantObj.save();
 
-      room.tenant = tenantObj._id;
-      await room.save();
-    } else {
-      await TenantModel.deleteOne({ room: room._id });
-      room.tenant = undefined;
-      await room.save();
+        room.tenant = tenantObj._id;
+        await room.save();
+      } else {
+        await TenantModel.deleteOne({ room: room._id });
+        room.tenant = undefined;
+        await room.save();
+      }
     }
 
     return await this.getRoomById(room._id.toString());

@@ -42,7 +42,7 @@ const RegisterScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1, paddingBottom: insets.bottom }}
     >
       <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>

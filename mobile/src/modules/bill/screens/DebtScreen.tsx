@@ -8,11 +8,34 @@ import { Badge, Button } from '../../../components/Common';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const addMonthsStr = (dateStr, n) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  
+  let year = parseInt(parts[0], 10);
+  let month = parseInt(parts[1], 10); // 1-12
+  const day = parseInt(parts[2], 10);
+  
+  month += n;
+  while (month > 12) {
+    month -= 12;
+    year += 1;
+  }
+  
+  const yStr = year.toString();
+  const mStr = month.toString().padStart(2, '0');
+  const dStr = day.toString().padStart(2, '0');
+  
+  return `${yStr}-${mStr}-${dStr}`;
+};
+
 const DebtScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [debtRooms, setDebtRooms] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [prices, setPrices] = useState({ wifi: 0, garbage: 0, waterMode: 'meter', waterFixed: 0 });
   const params = useLocalSearchParams();
   const router = useRouter();
 
@@ -26,7 +49,8 @@ const DebtScreen = ({ navigation }) => {
       
       const rooms = roomsRes.data || [];
       const bills = billsRes.data || [];
-      const prices = pricesRes.data || { wifi: 0, garbage: 0 };
+      const pricesData = pricesRes.data || { wifi: 0, garbage: 0 };
+      setPrices(pricesData);
       
       const now = new Date();
       const thisMonth = now.getMonth();
@@ -63,8 +87,9 @@ const DebtScreen = ({ navigation }) => {
         }
         
         const rent = parseFloat(room.price) || 0;
-        const wifiGarbage = (prices.wifi || 0) + (prices.garbage || 0);
-        const fixedMonthlyCost = rent + wifiGarbage;
+        const waterCost = pricesData.waterMode === 'fixed' ? (pricesData.waterFixed || 0) : 0;
+        const wifiGarbage = (pricesData.wifi || 0) + (pricesData.garbage || 0);
+        const fixedMonthlyCost = rent + wifiGarbage + waterCost;
         
         const dbUnpaidSum = unpaidBills.reduce((s, b) => s + (Number(b.total) || 0), 0);
         const ungeneratedCount = Math.max(0, debtMonths - unpaidBills.length);
@@ -88,6 +113,70 @@ const DebtScreen = ({ navigation }) => {
     }
   }, []);
 
+  const performCollectDebt = async (item) => {
+    const unpaidBills = item.unpaidBills || [];
+    
+    const rent = parseFloat(item.price) || 0;
+    const waterCost = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) : 0;
+    const wifiGarbage = (prices.wifi || 0) + (prices.garbage || 0);
+    const fixedMonthlyCost = rent + wifiGarbage + waterCost;
+    
+    const billsToUpdate = [];
+    const billsToCreate = [];
+    
+    if (item.checkin && item.debtMonths > 0) {
+      for (let i = 0; i < item.debtMonths; i++) {
+        const cycleDate = addMonthsStr(item.checkin, i);
+        if (i < unpaidBills.length) {
+          billsToUpdate.push(unpaidBills[i]);
+        } else {
+          billsToCreate.push({
+            date: cycleDate,
+            total: fixedMonthlyCost,
+          });
+        }
+      }
+    } else {
+      billsToUpdate.push(...unpaidBills);
+    }
+    
+    // 1. Update existing bills to collected
+    if (billsToUpdate.length > 0) {
+      await Promise.all(
+        billsToUpdate.map(b => axiosInstance.put(`/bills/${b.id || b._id}`, { collected: true }))
+      );
+    }
+    
+    // 2. Create missing bills as collected so they are counted towards revenue
+    if (billsToCreate.length > 0) {
+      await Promise.all(
+        billsToCreate.map(b => axiosInstance.post(`/rooms/${item.id || item._id}/bills`, {
+          total: b.total,
+          date: b.date,
+          sent: true,
+          collected: true,
+        }))
+      );
+    }
+    
+    // 3. Advance checkin date and clear status if room has debtMonths
+    if (item.checkin && item.debtMonths > 0) {
+      const targetCheckin = addMonthsStr(item.checkin, item.debtMonths);
+      await axiosInstance.put(`/rooms/${item.id || item._id}`, {
+        name: item.name,
+        price: item.price,
+        status: item.status === 'debt' || item.status === 'Debt' ? 'occupied' : item.status,
+        checkin: targetCheckin,
+      });
+    } else if (!item.checkin && item.status === 'debt') {
+      await axiosInstance.put(`/rooms/${item.id || item._id}`, {
+        name: item.name,
+        price: item.price,
+        status: 'occupied',
+      });
+    }
+  };
+
   const handleCollectMoneyWithConfirm = (item) => {
     const confirmMsg = item.debtMonths >= 2
       ? `Xác nhận khách ${item.tenant || 'thuê'} ở phòng ${item.name} đã trả toàn bộ tiền thuê trọ nợ ${item.debtMonths} tháng?`
@@ -97,15 +186,8 @@ const DebtScreen = ({ navigation }) => {
       const confirmed = window.confirm(confirmMsg);
       if (confirmed) {
         (async () => {
-          const unpaidBills = item.unpaidBills || [];
-          if (unpaidBills.length === 0) {
-            alert("Thông báo: Phòng trọ này không có hóa đơn chưa thanh toán.");
-            return;
-          }
           try {
-            await Promise.all(
-              unpaidBills.map(b => axiosInstance.put(`/bills/${b.id || b._id}`, { collected: true }))
-            );
+            await performCollectDebt(item);
             alert("Đã thu tiền phòng trọ thành công!");
             fetchDebt();
           } catch (err) {
@@ -127,15 +209,8 @@ const DebtScreen = ({ navigation }) => {
         {
           text: "Xác nhận",
           onPress: async () => {
-            const unpaidBills = item.unpaidBills || [];
-            if (unpaidBills.length === 0) {
-              Alert.alert("Thông báo", "Phòng trọ này không có hóa đơn chưa thanh toán.");
-              return;
-            }
             try {
-              await Promise.all(
-                unpaidBills.map(b => axiosInstance.put(`/bills/${b.id || b._id}`, { collected: true }))
-              );
+              await performCollectDebt(item);
               Alert.alert("Thành công", "Đã thu tiền phòng trọ thành công!");
               fetchDebt();
             } catch (err) {
