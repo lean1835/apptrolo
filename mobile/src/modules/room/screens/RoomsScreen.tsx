@@ -52,7 +52,7 @@ const RoomsScreen = () => {
 
          const toHighlight = new Set();
          data.forEach(r => {
-            if ((r.status === 'occupied' || r.status === 'Occupied') && roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)) {
+            if (['occupied', 'Occupied', 'debt', 'Debt'].includes(r.status) && roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)) {
                toHighlight.add(r.id);
             }
          });
@@ -185,7 +185,7 @@ const RoomsScreen = () => {
       return (!checkinDateStr || m.date >= checkinDateStr) && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
     });
     
-    const isOccupiedVal = item.status === 'occupied' || item.status === 'Occupied';
+    const isOccupiedVal = ['occupied', 'Occupied', 'debt', 'Debt'].includes(item.status);
     const showEarlyWarning = isOccupiedVal && isEarly && !hasReading;
 
     const unpaidBills = roomBills.filter(b => !b.collected);
