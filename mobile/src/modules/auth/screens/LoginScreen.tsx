@@ -260,7 +260,7 @@ const LoginScreen: React.FC = () => {
 
           {/* Footer */}
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} Nhà Trọ Số
+            © {new Date().getFullYear()} Haven
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

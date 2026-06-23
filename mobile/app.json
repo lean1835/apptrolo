@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Nhà Trọ Số",
-    "slug": "nhatroso",
+    "name": "Haven",
+    "slug": "haven",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/renthome.png",
@@ -59,7 +59,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3a7e046a-de71-4694-afb1-6c87c18f86fe"
+        "projectId": "72e1940d-ddfb-479c-9261-a8f96cdd4341"
       }
     },
     "owner": "lean1803"

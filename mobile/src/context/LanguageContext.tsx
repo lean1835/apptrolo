@@ -21,7 +21,7 @@ const translations: Record<LanguageType, TranslationKeys> = {
     or: "hoặc",
     
     // Login
-    loginTitle: "Nhà Trọ Số",
+    loginTitle: "Haven",
     loginSub: "Giải pháp số hóa quản lý nhà trọ",
     phone: "Số điện thoại",
     password: "Mật khẩu",
@@ -76,7 +76,7 @@ const translations: Record<LanguageType, TranslationKeys> = {
     or: "or",
     
     // Login
-    loginTitle: "Nhà Trọ Số",
+    loginTitle: "Haven",
     loginSub: "Digital lodging management solution",
     phone: "Phone Number",
     password: "Password",
