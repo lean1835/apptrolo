@@ -22,3 +22,7 @@
 2026-06-24 00:59:40 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
 2026-06-24 00:59:40 [info]: 🚀 Server running in development mode on port 8080
 2026-06-24 00:59:40 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 01:07:02 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 01:07:03 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 01:07:03 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 01:07:03 [info]: 🔗 Health check available at http://localhost:8080/health
