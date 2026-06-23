@@ -74,7 +74,7 @@ const parseDate = (dateStr: any): Date => {
 };
 
 const BillScreen: React.FC = () => {
-  const { id } = useLocalSearchParams();
+  const { id, action } = useLocalSearchParams();
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
   const insets = useSafeAreaInsets();
@@ -145,7 +145,7 @@ const BillScreen: React.FC = () => {
     let targetDate = new Date();
     if (unpaidBills.length > 0) {
       const sorted = [...unpaidBills].sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
-      targetDate = parseDate(sorted[0].date);
+      targetDate = parseDate(sorted[sorted.length - 1].date);
     } else if (filteredReadings && filteredReadings.length > 0) {
       const allSorted = [...filteredReadings].sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
       targetDate = parseDate(allSorted[allSorted.length - 1].date);
@@ -176,75 +176,91 @@ const BillScreen: React.FC = () => {
     if (!room || !prices) {
       return { 
         eUse: 0, wUse: 0, eAmt: 0, wAmt: 0, total: 0, rent: 0, prepaid: 0, fees: 0, 
-        cElec: 0, cWater: 0, pElecValue: 0, pWaterValue: 0 
+        cElec: 0, cWater: 0, pElecValue: 0, pWaterValue: 0, debtMonths: 1
       };
     }
     
     const checkinDateStr = room.checkin || '';
     const filteredReadings = (room.meterReadings || []).filter(r => !checkinDateStr || r.date >= checkinDateStr);
-    const allSorted = [...filteredReadings].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const allSorted = [...filteredReadings].sort((a, b) => a.date.localeCompare(b.date));
     
+    // Find all unpaid bills up to targetMonth/targetYear
+    const roomBills = room.bills || [];
+    const unpaidBills = roomBills.filter(b => {
+      if (b.collected) return false;
+      const parts = b.date.split('-');
+      if (parts.length !== 3) return false;
+      const by = parseInt(parts[0], 10);
+      const bm = parseInt(parts[1], 10);
+      return by < targetYear || (by === targetYear && bm <= (targetMonth + 1));
+    });
+
+    // Determine debtMonths (number of unpaid months starting from checkin up to target billing month)
+    let debtMonths = 1;
+    if (room.checkin) {
+      const checkinDate = parseDate(room.checkin);
+      if (!isNaN(checkinDate.getTime())) {
+        const checkinYear = checkinDate.getFullYear();
+        const checkinMonth = checkinDate.getMonth() + 1;
+        debtMonths = Math.max(1, (targetYear - checkinYear) * 12 + ((targetMonth + 1) - checkinMonth));
+      }
+    }
+
+    // Earliest unpaid bill date to find prior reading
+    let earliestUnpaidDate = null;
+    if (unpaidBills.length > 0) {
+      const sortedUnpaid = [...unpaidBills].sort((a, b) => a.date.localeCompare(b.date));
+      earliestUnpaidDate = sortedUnpaid[0].date;
+    }
+
+    // Find prior readings (before the earliest unpaid bill month)
+    let priorReading = null;
+    if (earliestUnpaidDate) {
+      const earliestParts = earliestUnpaidDate.split('-');
+      const earliestY = parseInt(earliestParts[0], 10);
+      const earliestM = parseInt(earliestParts[1], 10);
+      priorReading = [...allSorted]
+        .reverse()
+        .find(r => {
+          const parts = r.date.split('-');
+          const ry = parseInt(parts[0], 10);
+          const rm = parseInt(parts[1], 10);
+          return ry < earliestY || (ry === earliestY && rm < earliestM);
+        });
+    }
+
+    const pElecValue = priorReading ? priorReading.elec : (room.ep || 0);
+    const pWaterValue = priorReading ? priorReading.water : (room.wp || 0);
+    
+    // Find latest reading for targetMonth/targetYear
     const thisMonthReadings = allSorted.find(r => {
       const [y, m] = r.date.split('-');
       return parseInt(y, 10) === targetYear && parseInt(m, 10) === (targetMonth + 1);
     });
-
-    const priorReadings = allSorted.find(r => {
-      const [y, m] = r.date.split('-');
-      const ry = parseInt(y, 10);
-      const rm = parseInt(m, 10);
-      return ry < targetYear || (ry === targetYear && rm < (targetMonth + 1));
-    });
-
-    const pElecValue = priorReadings ? priorReadings.elec : (room.ep || 0);
-    const pWaterValue = priorReadings ? priorReadings.water : (room.wp || 0);
     
-    const cElec = thisMonthReadings ? thisMonthReadings.elec : pElecValue;
-    const cWater = thisMonthReadings ? thisMonthReadings.water : pWaterValue;
+    const latestReading = thisMonthReadings || (allSorted.length > 0 ? allSorted[allSorted.length - 1] : null);
+    const cElec = latestReading ? latestReading.elec : pElecValue;
+    const cWater = latestReading ? latestReading.water : pWaterValue;
 
-    const eUse = cElec - pElecValue;
-    const wUse = cWater - pWaterValue;
+    const eUse = Math.max(0, cElec - pElecValue);
+    const wUse = Math.max(0, cWater - pWaterValue);
     
     const eAmt = eUse * (prices.elec || 0);
-    const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) : (wUse * (prices.water || 0));
     const rent = parseFloat(room.price as string) || 0;
     const fees = (prices.wifi || 0) + (prices.garbage || 0);
+    const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) : (wUse * (prices.water || 0));
     const prepaid = room.contractPrepaid > 0 ? rent : 0;
-    const total = rent + eAmt + wAmt + fees - prepaid;
+    
+    // Calculate total cumulatively
+    const total = rent * debtMonths + eAmt + wAmt * (prices.waterMode === 'fixed' ? debtMonths : 1) + fees * debtMonths - prepaid * debtMonths;
 
-    return { eUse, wUse, eAmt, wAmt, total, rent, prepaid, fees, cElec, cWater, pElecValue, pWaterValue };
+    return { eUse, wUse, eAmt, wAmt, total, rent, prepaid, fees, cElec, cWater, pElecValue, pWaterValue, debtMonths };
   }, [room, prices, targetMonth, targetYear]);
 
-  // 3. Calculate Debt Info (Bọc useMemo để tối ưu hóa hiệu năng)
-  const debtMonths = useMemo(() => {
-    if (!room) return 0;
-    let dMonths = 0;
-    const roomBills = room.bills || [];
-    const unpaidBills = roomBills.filter(b => !b.collected);
-    
-    const isOccupied = room.status === 'occupied' || room.status === 'Occupied' || room.status === 'debt' || room.status === 'Debt';
-    if (isOccupied && room.checkin && unpaidBills.length > 0) {
-      const checkinDate = parseDate(room.checkin);
-      if (!isNaN(checkinDate.getTime())) {
-        const diffTime = Math.abs(now.getTime() - checkinDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const calculatedMonths = Math.floor(diffDays / 30);
-        if (calculatedMonths >= 1) {
-          dMonths = calculatedMonths;
-        }
-      }
-    }
-    return dMonths;
-  }, [room, now]);
-
-  const fixedMonthlyCost = useMemo(() => {
-    const rent = stats.rent;
-    const fees = stats.fees;
-    const waterCost = prices?.waterMode === 'fixed' ? (prices.waterFixed || 0) : 0;
-    return rent + fees + waterCost;
-  }, [stats.rent, stats.fees, prices]);
-  const priorDebt = useMemo(() => debtMonths >= 2 ? (debtMonths - 1) * fixedMonthlyCost : 0, [debtMonths, fixedMonthlyCost]);
-  const finalTotal = useMemo(() => stats.total + priorDebt, [stats.total, priorDebt]);
+  // 3. Calculate Debt Info
+  const debtMonths = stats.debtMonths;
+  const priorDebt = 0;
+  const finalTotal = stats.total;
 
   // 4. Calculate bank and QR URL (Bọc useMemo để tối ưu hóa hiệu năng)
   const qrUrl = useMemo(() => {
@@ -336,6 +352,19 @@ const BillScreen: React.FC = () => {
     }
   }, [markBillAsSent, t]);
 
+  useEffect(() => {
+    if (!loading && action && room && prices && lodge) {
+      const timer = setTimeout(() => {
+        if (action === 'save') {
+          handleCapture();
+        } else if (action === 'share') {
+          handleShare();
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, action, room, prices, lodge, handleCapture, handleShare]);
+
   const formattedExpectedDate = useMemo(() => {
     if (!expectedDate) return '';
     return `${expectedDate.getDate().toString().padStart(2, '0')}/${(expectedDate.getMonth() + 1).toString().padStart(2, '0')}/${expectedDate.getFullYear()}`;
@@ -346,7 +375,7 @@ const BillScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top + 10, 24) }]}>
         <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
           <BackIcon size={24} color={COLORS.g2} />
         </TouchableOpacity>
@@ -377,7 +406,7 @@ const BillScreen: React.FC = () => {
             <View style={styles.receiptPaper}>
               {/* Header */}
               <View style={styles.billHeader}>
-                <Text style={styles.bhLodge}>{lodge.name || 'AppTroLoLo'}</Text>
+                <Text style={styles.bhLodge}>{lodge.name || 'RentHub'}</Text>
                 <Text style={styles.bhTitle}>{t('invoiceTitle')}</Text>
                 <View style={styles.bhRow}>
                   <Text style={styles.bhRoom}>{t('room')}: {room.name}</Text>

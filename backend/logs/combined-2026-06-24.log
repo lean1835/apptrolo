@@ -1,0 +1,24 @@
+2026-06-24 00:07:42 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: ẻ", Type: room
+2026-06-24 00:08:28 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "ẻ · Khách mới: thắng", Type: member
+2026-06-24 00:09:24 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: p222", Type: room
+2026-06-24 00:09:45 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "p222 · Khách mới: ane", Type: member
+2026-06-24 00:10:59 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "ẻ · Đã ghi điện nước", Type: meter
+2026-06-24 00:11:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gr · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-24 00:11:57 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Gr · Đã thu tiền 386.355 đ", Type: bill
+2026-06-24 00:12:46 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "ẻ · Bước vào chu kỳ tháng mới, điện nước nối tiếp", Type: room
+2026-06-24 00:12:46 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "ẻ · Đã thu tiền 38.574 đ (Khách đóng thiếu nợ 347.139 đ)", Type: bill
+2026-06-24 00:18:34 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Tạo phòng mới: phongtest2", Type: room
+2026-06-24 00:18:46 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "phongtest2 · Khách mới: aâ", Type: member
+2026-06-24 00:44:42 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 00:44:44 [info]: ✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456 / Email: lean1835.vac@gmail.com
+2026-06-24 00:44:44 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 00:44:44 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 00:45:00 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 00:45:01 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 00:45:01 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 00:45:01 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 00:51:51 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "phongtest2 · Đã ghi điện nước", Type: meter
+2026-06-24 00:59:40 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 00:59:40 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 00:59:40 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 00:59:40 [info]: 🔗 Health check available at http://localhost:8080/health

@@ -17,6 +17,7 @@ export interface IRoom extends Document {
   contractPrepaid: number;
   lodge: Types.ObjectId;
   tenantId?: any;
+  debtAmount?: number;
   bills?: any[];
   meterReadings?: any[];
   members?: any[];

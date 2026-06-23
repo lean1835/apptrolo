@@ -298,12 +298,43 @@ export class RoomService {
         const eUse = Math.max(0, payload.elec - pElec);
         const wUse = Math.max(0, payload.water - pWater);
 
+        let billingMonths = 1;
+        if (room.checkin) {
+          const checkinParts = room.checkin.split('-');
+          if (checkinParts.length === 3) {
+            const checkinYear = parseInt(checkinParts[0], 10);
+            const checkinMonth = parseInt(checkinParts[1], 10);
+            
+            const totalMonths = Math.max(1, (year - checkinYear) * 12 + (month - checkinMonth));
+            
+            // Find how many bills already exist between checkinMonth and current month (exclusive)
+            const existingBills = await BillModel.find({ room: roomId }).session(session);
+            const billedMonthsCount = existingBills.filter(b => {
+              const bParts = b.date.split('-');
+              if (bParts.length !== 3) return false;
+              const by = parseInt(bParts[0], 10);
+              const bm = parseInt(bParts[1], 10);
+              
+              // Bill date is after checkin month and before current month
+              const isAfterCheckin = by > checkinYear || (by === checkinYear && bm > checkinMonth);
+              const isBeforeCurrent = by < year || (by === year && bm < month);
+              return isAfterCheckin && isBeforeCurrent;
+            }).length;
+            
+            billingMonths = Math.max(1, totalMonths - billedMonthsCount);
+          }
+        }
+
         const eAmt = eUse * (prices.elec || 0);
-        const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) : (wUse * (prices.water || 0));
-        const rent = parseFloat((room.price || 0).toString());
-        const fees = (prices.wifi || 0) + (prices.garbage || 0);
+        const wAmt = prices.waterMode === 'fixed' 
+          ? (prices.waterFixed || 0) * billingMonths 
+          : (wUse * (prices.water || 0));
+        const rent = parseFloat((room.price || 0).toString()) * billingMonths;
+        const fees = ((prices.wifi || 0) + (prices.garbage || 0)) * billingMonths;
         const prepaid = room.contractPrepaid > 0 ? rent : 0;
-        const total = rent + eAmt + wAmt + fees - prepaid;
+        
+        const debtAmt = (room as any).debtAmount || 0;
+        const total = rent + eAmt + wAmt + fees - prepaid + debtAmt;
 
         // 4. Tìm và tự động tạo/cập nhật hóa đơn
         const bills = await BillModel.find({ room: roomId }).session(session);
@@ -324,6 +355,11 @@ export class RoomService {
             room: roomId,
           });
           await newBill.save({ session });
+        }
+
+        if (debtAmt > 0) {
+          (room as any).debtAmount = 0;
+          await room.save({ session });
         }
 
         await activityService.logActivityByLodge(

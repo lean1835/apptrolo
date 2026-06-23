@@ -36,7 +36,6 @@
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
-    "html2canvas": "^1.4.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
@@ -47,7 +46,8 @@
     "react-native-svg": "^15.15.4",
     "react-native-view-shot": "4.0.3",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.5.1"
+    "react-native-worklets": "0.5.1",
+    "ua-parser-js": "^2.0.10"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",

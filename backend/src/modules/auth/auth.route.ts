@@ -6,6 +6,8 @@ import {
   loginSchema,
   updateProfileSchema,
   changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from './auth.validation';
 import {
   register,
@@ -13,6 +15,8 @@ import {
   getMe,
   updateProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
 } from './auth.controller';
 
 const router = Router();
@@ -20,6 +24,8 @@ const router = Router();
 // Public routes
 router.post('/register', validate(registerSchema), register);
 router.post('/authenticate', validate(loginSchema), authenticate);
+router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
+router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
 
 // Protected routes (require authenticationMiddleware)
 router.get('/me', authenticationMiddleware, getMe);

@@ -7,6 +7,8 @@ export interface IUser extends Document {
   name: string;
   email?: string;
   lodge?: Types.ObjectId; // OneToOne relation
+  resetPasswordOTP?: string;
+  resetPasswordOTPExpires?: Date;
 }
 
 export interface IUserPayload {

@@ -8,6 +8,8 @@ const UserSchema = new Schema<IUser>(
     name: { type: String, required: true, trim: true },
     email: { type: String, trim: true, default: '' },
     lodge: { type: Schema.Types.ObjectId, ref: 'Lodges' },
+    resetPasswordOTP: { type: String, default: '' },
+    resetPasswordOTPExpires: { type: Date, default: null },
   },
   {
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },

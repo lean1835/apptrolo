@@ -1,9 +1,10 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Platform, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Platform, Modal, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SHADOWS, SIZES } from '../../../styles/Theme';
-import { BackIcon, UserIcon, BoltIcon, MoneyIcon, ReceiptIcon, DoorIcon, RestoreIcon, PlusUserIcon } from '../../../assets/Icons';
+import { BackIcon, UserIcon, BoltIcon, MoneyIcon, ReceiptIcon, DoorIcon, RestoreIcon, PlusUserIcon, DropletIcon, EditIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Badge, Button } from '../../../components/Common';
 import { useFocusEffect } from '@react-navigation/native';
@@ -78,7 +79,14 @@ const RoomDetailScreen = () => {
     }
   };
 
-  if (loading) return <View style={styles.loading}><Text>Đang tải...</Text></View>;
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={COLORS.pr} />
+        <Text style={{ marginTop: 10, color: COLORS.g3, fontWeight: '600', fontSize: 13 }}>Đang tải thông tin phòng...</Text>
+      </View>
+    );
+  }
   if (!room) return <View style={styles.loading}><Text>Không tìm thấy phòng!</Text></View>;
 
   const handleCheckout = () => {
@@ -223,6 +231,7 @@ const RoomDetailScreen = () => {
   const checkinDateStr = room.checkin || '';
   const filteredReadings = (room.meterReadings || []).filter(r => !checkinDateStr || r.date >= checkinDateStr);
   const filteredBills = (room.bills || []).filter(b => !checkinDateStr || b.date >= checkinDateStr);
+  
   const parseDate = (dateStr) => {
     if (!dateStr) return new Date();
     if (typeof dateStr !== 'string') return new Date(dateStr);
@@ -285,7 +294,6 @@ const RoomDetailScreen = () => {
   const getEarlyWarningInfo = () => {
     const today = new Date();
     
-    // 1. Check room creation date if it is in the future
     if (room?.createdAt) {
         const createdDate = parseDate(room.createdAt);
         const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
@@ -320,11 +328,29 @@ const RoomDetailScreen = () => {
     
     return { isEarly, expectedDate };
   };
-  const { isEarly, expectedDate } = getEarlyWarningInfo();
+  const { isEarly } = getEarlyWarningInfo();
+
+  const getInitials = (name) => {
+    if (!name) return 'KT';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const initials = getInitials(room.tenant);
+
+  // Delta usage calculations
+  const elecUsage = (currElec !== null) ? (currElec - prevElec) : null;
+  const waterUsage = (currWater !== null) ? (currWater - prevWater) : null;
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#14532d', '#15803d', '#16a34a']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.topbar, { paddingTop: Math.max(insets.top + 10, 24) }]}
+      >
         <TouchableOpacity 
           style={styles.tbback} 
           onPress={() => {
@@ -348,80 +374,101 @@ const RoomDetailScreen = () => {
           >
             <RestoreIcon size={22} color={COLORS.white} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.tbedit}
-            onPress={() => router.push({ pathname: '/edit-room', params: { id: roomId } })}
-          >
-            <Text style={styles.tbeditTxt}>Sửa</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {!isOccupied ? (
           <>
+            {/* Empty Room Vector Banner */}
+            <View style={styles.emptyStateBanner}>
+              <View style={[styles.emptyStateIconBadge, { backgroundColor: 'rgba(100, 116, 139, 0.08)' }]}>
+                <DoorIcon size={32} color="#64748b" />
+              </View>
+              <Text style={styles.emptyStateTitle}>Phòng đang trống</Text>
+              <Text style={styles.emptyStateSub}>
+                Hiện tại chưa có thông tin khách hàng ở trong phòng này. Hãy thêm khách thuê để bắt đầu ghi chỉ số điện nước & lập hóa đơn hàng tháng.
+              </Text>
+            </View>
+
             <View style={styles.card}>
               <Text style={styles.cardTitle}>THÔNG TIN PHÒNG</Text>
               <View style={styles.divider} />
               
-              <View style={styles.drow}>
-                <DoorIcon size={18} color={COLORS.g4} />
-                <Text style={styles.dlbl}>Tên phòng</Text>
-                <Text style={styles.dval}>{room.name}</Text>
-              </View>
-              
-              <View style={styles.drow}>
-                <MoneyIcon size={18} color={COLORS.g4} />
-                <Text style={styles.dlbl}>Giá thuê</Text>
-                <Text style={[styles.dval, { color: COLORS.rose }]}>{Number(room.price).toLocaleString('vi')} đ/th</Text>
-              </View>
-              
-              <View style={styles.drow}>
-                <Text style={styles.dlbl}>Trạng thái</Text>
-                <Text style={styles.dval}>Đang trống</Text>
+              <View style={styles.leaseGrid}>
+                <View style={[styles.leaseItem, { width: '100%' }]}>
+                  <Text style={styles.leaseLabel}>ĐƠN GIÁ THUÊ</Text>
+                  <Text style={[styles.leaseValue, { fontSize: 16, color: COLORS.rose }]}>
+                    {Number(room.price).toLocaleString('vi')} đ/tháng
+                  </Text>
+                </View>
+                <View style={styles.leaseItem}>
+                  <Text style={styles.leaseLabel}>TÊN PHÒNG</Text>
+                  <Text style={styles.leaseValue}>{room.name}</Text>
+                </View>
+                <View style={styles.leaseItem}>
+                  <Text style={styles.leaseLabel}>TRẠNG THÁI</Text>
+                  <Text style={styles.leaseValue}>Còn trống</Text>
+                </View>
               </View>
             </View>
 
             <Button 
-              title="+ Thêm khách thuê" 
+              title="+ Thêm khách thuê mới" 
               type="green"
               onPress={() => router.push({ pathname: '/add-tenant', params: { id: roomId } })} 
               full 
-              style={{ marginTop: 10, paddingVertical: 15 }} 
+              style={{ marginTop: 8, paddingVertical: 15 }} 
             />
           </>
         ) : (
           <>
+            {/* Primary Tenant Card */}
             <View style={styles.card}>
               <View style={styles.hrow}>
                 <Text style={styles.cardTitle}>NGƯỜI THUÊ CHÍNH</Text>
-                <TouchableOpacity onPress={() => router.push({ pathname: '/add-tenant', params: { id: room._id || room.id || id } })} style={styles.miniEdit}>
-                   <Text style={{ color: COLORS.pr, fontSize: 12, fontWeight: '800' }}>Sửa</Text>
+                <TouchableOpacity onPress={() => router.push({ pathname: '/add-tenant', params: { id: roomId } })} style={styles.miniEdit}>
+                   <Text style={{ color: COLORS.pr, fontSize: 12, fontWeight: '850' }}>Sửa</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.divider} />
               
               <View style={styles.tenantHeader}>
-                 <View style={styles.avatar}>
-                    <UserIcon size={36} color={COLORS.pr} />
+                 <View style={[styles.avatarCircle, { backgroundColor: 'rgba(22, 163, 74, 0.1)' }]}>
+                    <Text style={[styles.avatarText, { color: COLORS.pr }]}>{initials}</Text>
                  </View>
-                 <View style={{ flex: 1 }}>
+                 <View style={{ flex: 1, gap: 2 }}>
                     <Text style={styles.tenantName}>{room.tenant || 'Chưa cập nhật tên'}</Text>
                     <Text style={styles.tenantPhone}>📞 {room.phone || 'Chưa cập nhật SĐT'}</Text>
-                    <Text style={styles.tenantInfo}>Ngày vào: {room.checkin || '--/--/----'} · {Number(room.price).toLocaleString('vi')} đ/th</Text>
-                    <View style={{ marginTop: 8, flexDirection: 'row' }}>
-                       <Badge 
-                         label={room.contract === 'quarter' ? "HĐ Quý" : room.contract === 'halfyear' ? "HĐ 6 tháng" : "Theo tháng"} 
-                         type="sky" 
-                       />
-                       {room.contractPrepaid > 0 && (
-                          <Text style={styles.prepaidLabel}> · Đã trả trước {room.contractPrepaid} tháng</Text>
-                       )}
-                    </View>
                  </View>
+              </View>
+
+              {/* Structured Lease Info Grid */}
+              <View style={styles.leaseGrid}>
+                <View style={styles.leaseItem}>
+                  <Text style={styles.leaseLabel}>GIÁ THUÊ</Text>
+                  <Text style={styles.leaseValue}>{Number(room.price).toLocaleString('vi')}đ/th</Text>
+                </View>
+                <View style={styles.leaseItem}>
+                  <Text style={styles.leaseLabel}>NGÀY VÀO</Text>
+                  <Text style={styles.leaseValue}>{room.checkin || '--/--/----'}</Text>
+                </View>
+                <View style={styles.leaseItem}>
+                  <Text style={styles.leaseLabel}>HỢP ĐỒNG</Text>
+                  <Text style={styles.leaseValue}>
+                    {room.contract === 'quarter' ? "Theo quý" : room.contract === 'halfyear' ? "6 tháng" : "Theo tháng"}
+                  </Text>
+                </View>
+                <View style={styles.leaseItem}>
+                  <Text style={styles.leaseLabel}>ĐÃ TRẢ TRƯỚC</Text>
+                  <Text style={styles.leaseValue}>
+                    {room.contractPrepaid > 0 ? `${room.contractPrepaid} tháng` : "Không có"}
+                  </Text>
+                </View>
               </View>
             </View>
 
+            {/* Roommates Card */}
             <View style={styles.card}>
               <View style={styles.hrow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -435,18 +482,23 @@ const RoomDetailScreen = () => {
               <View style={styles.divider} />
               
               {(room.members && room.members.length > 0) ? (
-                room.members.map((m, idx) => (
-                  <View key={idx} style={styles.mRow}>
-                    <View style={styles.mIcon}><UserIcon size={18} color={COLORS.sky} /></View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.mName}>{m.name}</Text>
-                      <Text style={styles.mPhone}>📞 {m.phone || 'Không có SĐT'} {m.note ? ` · ${m.note}` : ''}</Text>
+                room.members.map((m, idx) => {
+                  const mInitials = getInitials(m.name);
+                  return (
+                    <View key={idx} style={styles.mRow}>
+                      <View style={[styles.avatarCircleSmall, { backgroundColor: 'rgba(2, 132, 199, 0.1)' }]}>
+                         <Text style={[styles.avatarTextSmall, { color: COLORS.sky }]}>{mInitials}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.mName}>{m.name}</Text>
+                        <Text style={styles.mPhone}>📞 {m.phone || 'Không có SĐT'} {m.note ? ` · ${m.note}` : ''}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => handleRemoveMember(m._id || m.id, m.name)} style={styles.deleteMemberBtn}>
+                         <Text style={styles.deleteMemberTxt}>×</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity onPress={() => handleRemoveMember(m._id || m.id, m.name)} style={{ padding: 4 }}>
-                       <Text style={{ color: COLORS.rose, fontWeight: 'bold' }}>×</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
+                  );
+                })
               ) : (
                 <View style={styles.emptySmall}>
                   <Text style={styles.emptySmallTxt}>Chưa có người ở cùng</Text>
@@ -454,77 +506,65 @@ const RoomDetailScreen = () => {
               )}
             </View>
 
+
+
+            {/* Action Panel Card */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>ĐIỆN NƯỚC THÁNG {new Date().getMonth() + 1} / {new Date().getFullYear()}</Text>
+              <Text style={styles.cardTitle}>QUẢN LÝ & THAO TÁC</Text>
               <View style={styles.divider} />
               
-              <View style={styles.meterRow}>
-                 <Text style={styles.meterLbl}>⚡ Điện kỳ trước</Text>
-                 <Text style={styles.meterVal}>{prevElec} kWh</Text>
-              </View>
-              <View style={styles.meterRow}>
-                 <Text style={styles.meterLbl}>⚡ Điện kỳ này</Text>
-                 <Text style={[styles.meterVal, { color: COLORS.pr }]}>{currElec !== null ? `${currElec} kWh` : 'Chưa ghi'}</Text>
-              </View>
-              {prices?.waterMode === 'fixed' ? (
-                <View style={styles.meterRow}>
-                   <Text style={styles.meterLbl}>💧 Nước</Text>
-                   <Text style={styles.meterVal}>Cố định</Text>
+              <View style={styles.actionColumn}>
+                {/* Main Action: Ghi điện nước */}
+                <TouchableOpacity 
+                  style={styles.btnPrimaryAction}
+                  onPress={() => router.push({ pathname: '/meter', params: { id: roomId } })}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.btnActionIconWrap}>
+                    <BoltIcon size={18} color="#fff" />
+                  </View>
+                  <Text style={styles.btnActionTxt}>Ghi số điện nước</Text>
+                </TouchableOpacity>
+
+                <View style={styles.actionRowGrid}>
+                  {/* Edit Room Button */}
+                  <TouchableOpacity 
+                    style={[styles.btnSecondaryAction, { borderColor: COLORS.g5 }]}
+                    onPress={() => router.push({ pathname: '/edit-room', params: { id: roomId } })}
+                    activeOpacity={0.8}
+                  >
+                    <EditIcon size={16} color={COLORS.g2} />
+                    <Text style={styles.btnSecondaryTxt}>Sửa phòng</Text>
+                  </TouchableOpacity>
+
+                  {/* Checkout Room Button */}
+                  <TouchableOpacity 
+                    style={[styles.btnSecondaryAction, { borderColor: COLORS.rose, backgroundColor: 'rgba(225, 29, 72, 0.02)' }]}
+                    onPress={handleCheckout}
+                    activeOpacity={0.8}
+                  >
+                    <DoorIcon size={16} color={COLORS.rose} />
+                    <Text style={[styles.btnSecondaryTxt, { color: COLORS.rose }]}>Trả phòng</Text>
+                  </TouchableOpacity>
                 </View>
-              ) : (
-                <>
-                  <View style={styles.meterRow}>
-                     <Text style={styles.meterLbl}>💧 Nước kỳ trước</Text>
-                     <Text style={styles.meterVal}>{prevWater} m³</Text>
-                  </View>
-                  <View style={styles.meterRow}>
-                     <Text style={styles.meterLbl}>💧 Nước kỳ này</Text>
-                     <Text style={[styles.meterVal, { color: COLORS.rose }]}>{currWater !== null ? `${currWater} m³` : 'Chưa ghi'}</Text>
-                  </View>
-                </>
-              )}
-            </View>
 
-            <View style={styles.actionRow}>
-              <Button 
-                title="Ghi điện nước" 
-                type="green" 
-                icon={BoltIcon}
-                onPress={() => router.push({ pathname: '/meter', params: { id: roomId } })} 
-                full 
-                style={{ flex: 1 }}
-              />
-              <Button 
-                title="Hóa đơn" 
-                type="green" 
-                icon={ReceiptIcon}
-                onPress={() => router.push({ pathname: '/bill', params: { id: roomId } })} 
-                full 
-                style={{ flex: 1 }}
-              />
+                {/* Destructive Action: Delete Room */}
+                <TouchableOpacity 
+                  style={styles.btnDeleteAction}
+                  onPress={handleDeleteRoom}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.btnDeleteTxt}>Xóa phòng này</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-
-            <Button 
-              title="Trả phòng" 
-              type="rose" 
-              onPress={handleCheckout} 
-              full 
-              style={{ marginTop: 10, backgroundColor: 'transparent', borderColor: COLORS.rose, borderWidth: 1 }}
-            />
           </>
         )}
         
-        <Button 
-          title="Xóa phòng này" 
-          type="rose" 
-          onPress={handleDeleteRoom} 
-          full 
-          style={{ marginTop: 20 }}
-        />
-
         <View style={{ height: 40 }} />
       </ScrollView>
 
+      {/* History bottom sheet modal */}
       <Modal
         visible={showHistoryModal}
         animationType="slide"
@@ -534,6 +574,7 @@ const RoomDetailScreen = () => {
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowHistoryModal(false)} />
           <View style={styles.modalContent}>
+            <View style={styles.sheetHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Lịch sử phòng</Text>
               <Text style={styles.modalSubtitle}>
@@ -591,7 +632,7 @@ const RoomDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4', // Light green background like in screenshot
+    backgroundColor: '#f8fafc',
   },
   loading: {
     flex: 1,
@@ -599,27 +640,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   topbar: {
-    backgroundColor: '#16a34a', // Dark green header
-    paddingTop: 50,
-    paddingBottom: 14,
-    paddingHorizontal: 14,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...SHADOWS.sh,
   },
   tbback: {
     width: 38,
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 12,
   },
   tbtitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
     color: COLORS.white,
+    letterSpacing: -0.5,
   },
   tbActions: {
     flexDirection: 'row',
@@ -631,14 +674,14 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 12,
   },
   tbedit: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   tbeditTxt: {
     color: COLORS.white,
@@ -646,20 +689,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   scroll: {
-    padding: 14,
-    gap: 12,
+    padding: 16,
+    gap: 16,
   },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 16,
     ...SHADOWS.sh,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   cardTitle: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '900',
     color: '#94a3b8',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   divider: {
     height: 1,
@@ -670,25 +715,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  drow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
-  },
-  dlbl: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '600',
-    marginLeft: 10,
-    flex: 1,
-  },
-  dval: {
-    fontSize: 14,
-    color: '#0f172a',
-    fontWeight: '800',
   },
   miniEdit: {
     backgroundColor: '#f0fdf4',
@@ -704,20 +730,34 @@ const styles = StyleSheet.create({
   },
   tenantHeader: {
      flexDirection: 'row',
-     gap: 15,
+     gap: 16,
      alignItems: 'flex-start',
   },
-  avatar: {
+  avatarCircle: {
      width: 56,
      height: 56,
-     borderRadius: 14,
-     backgroundColor: '#dcfce7',
+     borderRadius: 28,
      alignItems: 'center',
      justifyContent: 'center',
   },
-  tenantName: {
-     fontSize: 16,
+  avatarText: {
+     fontSize: 18,
      fontWeight: '900',
+  },
+  avatarCircleSmall: {
+     width: 36,
+     height: 36,
+     borderRadius: 18,
+     alignItems: 'center',
+     justifyContent: 'center',
+  },
+  avatarTextSmall: {
+     fontSize: 13,
+     fontWeight: '900',
+  },
+  tenantName: {
+     fontSize: 17,
+     fontWeight: '950',
      color: '#0f172a',
   },
   tenantPhone: {
@@ -726,17 +766,6 @@ const styles = StyleSheet.create({
      color: COLORS.pr,
      marginTop: 2,
   },
-  tenantInfo: {
-     fontSize: 11,
-     color: '#64748b',
-     marginTop: 2,
-     fontWeight: '600',
-  },
-  prepaidLabel: {
-     fontSize: 11,
-     color: COLORS.sky,
-     fontWeight: '800',
-  },
   mRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -744,14 +773,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
-  },
-  mIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    backgroundColor: '#e0f2fe',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   mName: {
     fontSize: 13,
@@ -763,6 +784,22 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontWeight: '600',
   },
+  deleteMemberBtn: {
+    padding: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffe4e6',
+  },
+  deleteMemberTxt: {
+    color: COLORS.rose,
+    fontWeight: 'bold',
+    fontSize: 14,
+    lineHeight: 14,
+    marginTop: -2,
+  },
   emptySmall: {
     paddingVertical: 12,
     alignItems: 'center',
@@ -772,38 +809,22 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontStyle: 'italic',
   },
-  meterRow: {
-     flexDirection: 'row',
-     justifyContent: 'space-between',
-     paddingVertical: 8,
-  },
-  meterLbl: {
-     fontSize: 13,
-     color: '#64748b',
-     fontWeight: '600',
-  },
-  meterVal: {
-     fontSize: 13,
-     fontWeight: '800',
-     color: '#0f172a',
-  },
   actionRow: {
     flexDirection: 'row',
     gap: 10,
+    marginTop: 10,
   },
-  earlyWarningTag: {
-     backgroundColor: COLORS['amber-l'],
-     borderWidth: 1,
-     borderColor: COLORS.amber,
-     borderRadius: 12,
-     padding: 12,
-     marginBottom: 12,
+  btnOutline: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  earlyWarningTagTxt: {
-     color: '#b45309',
-     fontSize: 12,
-     fontWeight: '700',
-     lineHeight: 16,
+  btnOutlineTxt: {
+    fontSize: 14,
+    fontWeight: '800',
   },
   modalOverlay: {
     flex: 1,
@@ -811,15 +832,24 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
   },
   modalContent: {
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 20,
     paddingBottom: 35,
     maxHeight: '80%',
+    ...SHADOWS.sh2,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#cbd5e1',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   modalHeader: {
     alignItems: 'center',
@@ -835,25 +865,6 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontWeight: '600',
     marginTop: 4,
-  },
-  paidSummary: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-  },
-  paidSummaryLbl: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '600',
-  },
-  paidSummaryVal: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: COLORS.pr,
   },
   paidList: {
     maxHeight: 280,
@@ -921,7 +932,187 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#64748b',
   },
+  leaseGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 14,
+  },
+  leaseItem: {
+    width: '48%',
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  leaseLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94a3b8',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  leaseValue: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#0f172a',
+  },
+  utilityGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  utilityBox: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+  },
+  utilityHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  utilityTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  utilityIconBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  utilityBoxTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  utilityDeltaBadge: {
+    backgroundColor: 'rgba(217, 119, 6, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  utilityDeltaTxt: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: COLORS.amber,
+  },
+  utilityIndexRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  utilityIndexMain: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0f172a',
+  },
+  utilityUnit: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748b',
+    marginLeft: 3,
+  },
+  utilityIndexSub: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  actionColumn: {
+    gap: 12,
+  },
+  btnPrimaryAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.pr,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+    ...SHADOWS.sh2,
+  },
+  btnActionIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnActionTxt: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  actionRowGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  btnSecondaryAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 6,
+  },
+  btnSecondaryTxt: {
+    color: COLORS.g1,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  btnDeleteAction: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  btnDeleteTxt: {
+    color: '#ef4444',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  emptyStateBanner: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    ...SHADOWS.sh,
+    marginBottom: 16,
+  },
+  emptyStateIconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.g1,
+    marginBottom: 6,
+  },
+  emptyStateSub: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 18,
+    fontWeight: '600',
+  },
 });
 
 export default RoomDetailScreen;
-

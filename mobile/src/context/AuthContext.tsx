@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (err: any) {
       console.error('Login error:', err);
-      return { success: false, error: err.response?.data?.message || 'Login failed' };
+      return { success: false, error: err.response?.data?.message || err.message || 'Login failed' };
     }
   };
 
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (err: any) {
       console.error('Registration error:', err);
-      return { success: false, error: err.response?.data?.message || 'Registration failed' };
+      return { success: false, error: err.response?.data?.message || err.message || 'Registration failed' };
     }
   };
 

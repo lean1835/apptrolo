@@ -1,8 +1,8 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatList, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatList, Dimensions, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { COLORS, SHADOWS, SIZES } from '../../../styles/Theme';
-import { PlusIcon, DoorIcon, ChevronIcon, AlertIcon } from '../../../assets/Icons';
+import { PlusIcon, DoorIcon, ChevronIcon, AlertIcon, SearchIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Badge } from '../../../components/Common';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,11 +23,12 @@ const RoomsScreen = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
   const [highlightedRooms, setHighlightedRooms] = useState(new Set());
-
-  const fetchRooms = useCallback(async () => {
-    setLoading(true);
+ 
+  const fetchRooms = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const [roomsRes, billsRes] = await Promise.all([
         axiosInstance.get('/rooms'),
@@ -36,7 +37,7 @@ const RoomsScreen = () => {
       const data = roomsRes.data;
       const fetchedBills = billsRes.data || [];
       setBills(fetchedBills);
-
+ 
       if (highlightNeedsBill) {
          setShowHighlight(true);
          const now = new Date();
@@ -49,7 +50,7 @@ const RoomsScreen = () => {
                roomsWithReading.add(r.id);
             }
          });
-
+ 
          const toHighlight = new Set();
          data.forEach(r => {
             if ((r.status === 'occupied' || r.status === 'Occupied') && roomsWithReading.has(r.id) && !roomsWithBill.has(r.id)) {
@@ -58,21 +59,25 @@ const RoomsScreen = () => {
          });
          setHighlightedRooms(toHighlight);
       }
-
+ 
       setRooms(data);
       setFilteredRooms(data);
     } catch (err) {
       console.error('Fetch rooms error:', err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [highlightNeedsBill]);
-
+ 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchRooms(false);
+    setRefreshing(false);
+  }, [fetchRooms]);
+ 
   useFocusEffect(
     useCallback(() => {
       fetchRooms();
-      const interval = setInterval(fetchRooms, 5000); // Poll every 5s
-      return () => clearInterval(interval);
     }, [fetchRooms])
   );
 
@@ -112,8 +117,18 @@ const RoomsScreen = () => {
       );
     }
 
-    const statusCls = styles[`rcard-${item.status}`] || styles['rcard-emp'];
-    const iconBg = item.status === 'empty' ? COLORS.g4 : item.status === 'debt' ? COLORS.rose : COLORS.pr;
+    let iconBgColor = 'rgba(22, 163, 74, 0.12)';
+    let iconColor = COLORS.pr;
+    if (item.status === 'empty') {
+      iconBgColor = 'rgba(148, 163, 184, 0.12)';
+      iconColor = '#64748b';
+    } else if (item.status === 'debt') {
+      iconBgColor = 'rgba(225, 29, 72, 0.12)';
+      iconColor = COLORS.rose;
+    } else if (item.status === 'maintenance') {
+      iconBgColor = 'rgba(217, 119, 6, 0.12)';
+      iconColor = COLORS.amber;
+    }
     
     const checkinDateStr = item.checkin || '';
     const roomBills = bills.filter(b => b.roomId === item.id && (!checkinDateStr || b.date >= checkinDateStr));
@@ -210,34 +225,30 @@ const RoomsScreen = () => {
 
     const isHighlighted = showHighlight && highlightedRooms.has(item.id);
     const handlePress = () => {
-      if (isHighlighted) {
-        router.push({ pathname: '/bill', params: { id: item.id } });
-      } else {
-        router.push({ pathname: '/room-detail', params: { id: item.id } });
-      }
+      router.push({ pathname: '/room-detail', params: { id: item.id } });
     };
 
     return (
       <TouchableOpacity 
-        style={[styles.rcard, statusCls]} 
+        style={[styles.rcard, item.status === 'empty' && styles.rcardEmpty]} 
         onPress={handlePress}
       >
-        <View style={[styles.rcardIco, { backgroundColor: iconBg }]}>
-          <DoorIcon size={16} color="#fff" />
+        <View style={[styles.rcardIco, { backgroundColor: iconBgColor }]}>
+          <DoorIcon size={14} color={iconColor} />
         </View>
         <Text style={styles.rnum}>{item.name}</Text>
         <Text style={styles.rname} numberOfLines={1}>{item.status === 'empty' ? '— Trống —' : item.tenant}</Text>
-        <Text style={styles.rprice}>{Number(item.price).toLocaleString('vi')} đ/th</Text>
-        <View style={{ marginTop: 5, flexDirection: 'row', gap: 4, flexWrap: 'wrap' }}>
+        <Text style={styles.rprice}>Giá: {Number(item.price).toLocaleString('vi')} đ</Text>
+        <View style={styles.badgeRow}>
           <Badge 
             label={item.status === 'occupied' ? 'Có khách' : item.status === 'empty' ? 'Trống' : item.status === 'debt' ? 'Nợ tiền' : 'Bảo trì'} 
             type={item.status === 'occupied' ? 'pr' : item.status === 'empty' ? 'gray' : item.status === 'debt' ? 'rose' : 'amber'} 
           />
           {showEarlyWarning && (
-            <Badge label="Chưa đến ngày ghi" type="amber" />
+            <Badge label="Chưa đến ngày" type="amber" />
           )}
           {showReminderTag && (
-            <Badge label="Nhắc ghi điện nước" type="amber" />
+            <Badge label="Cần ghi số" type="amber" />
           )}
         </View>
         {isDebt ? (
@@ -248,7 +259,7 @@ const RoomsScreen = () => {
           </View>
         ) : isHighlighted ? (
           <View style={styles.highlightBadge}>
-             <AlertIcon size={11} color="#ef4444" strokeWidth={3} />
+             <AlertIcon size={10} color="#e11d48" strokeWidth={3} />
              <Text style={styles.highlightTxt}>CHƯA GỬI</Text>
           </View>
         ) : null}
@@ -256,43 +267,56 @@ const RoomsScreen = () => {
     );
   };
 
+  if (loading && rooms.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.pr} />
+        <Text style={styles.loadingText}>Đang tải danh sách phòng...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
-        <Text style={styles.tbtitle}>Danh sách phòng</Text>
-      </View>
-      
-      <View style={styles.filterSection}>
-        <View style={styles.searchWrap}>
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Tìm phòng, tên khách..." 
-            value={search}
-            onChangeText={setSearch}
-          />
+      <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 10, 24) }]}>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.tbtitle}>Danh sách phòng</Text>
         </View>
-      </View>
-      
-      <View style={styles.statusFilters}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusFiltersScroll}>
-          {[
-            { id: 'all', label: 'Tất cả' },
-            { id: 'occupied', label: 'Có khách' },
-            { id: 'empty', label: 'Trống' },
-            { id: 'debt', label: 'Nợ tiền' },
-            { id: 'maintenance', label: 'Bảo trì' }
-          ].map(opt => (
-            <TouchableOpacity 
-              key={opt.id}
-              style={[styles.filterChip, filter === opt.id && styles.filterChipActive]}
-              onPress={() => setFilter(opt.id)}
-            >
-              <Text style={[styles.filterChipText, filter === opt.id && styles.filterChipTextActive]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        
+        <View style={styles.searchSection}>
+          <View style={styles.searchBarContainer}>
+            <SearchIcon size={16} color={COLORS.g3} style={styles.searchIcon} />
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Tìm phòng, tên khách..." 
+              placeholderTextColor={COLORS.g4}
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+        </View>
+        
+        <View style={styles.statusFilters}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusFiltersScroll}>
+            {[
+              { id: 'all', label: 'Tất cả' },
+              { id: 'occupied', label: 'Có khách' },
+              { id: 'empty', label: 'Trống' },
+              { id: 'debt', label: 'Nợ tiền' },
+              { id: 'maintenance', label: 'Bảo trì' }
+            ].map(opt => (
+              <TouchableOpacity 
+                key={opt.id}
+                style={[styles.filterChip, filter === opt.id && styles.filterChipActive]}
+                onPress={() => setFilter(opt.id)}
+              >
+                <Text style={[styles.filterChipText, filter === opt.id && styles.filterChipTextActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </View>
 
       <FlatList
@@ -305,6 +329,13 @@ const RoomsScreen = () => {
         ListFooterComponent={
           loading ? <ActivityIndicator color={COLORS.pr} style={{ marginVertical: 20 }} /> : null
         }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.pr]} />
+        }
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
       />
     </View>
   );
@@ -313,132 +344,153 @@ const RoomsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: '#f8fafc',
   },
-  topbar: {
+  headerContainer: {
     backgroundColor: COLORS.white,
-    paddingTop: 50,
-    paddingBottom: 14,
-    paddingHorizontal: 14,
     ...SHADOWS.sh,
+    borderBottomWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  headerTopRow: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
   },
   tbtitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
     color: COLORS.g1,
+    letterSpacing: -0.3,
   },
-  filterSection: {
-    padding: 8,
-    paddingHorizontal: 13,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.g5,
+  searchSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  searchBarContainer: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
   },
-  searchWrap: {
-    flex: 1,
+  searchIcon: {
+    marginRight: 6,
   },
   searchInput: {
-    borderWidth: 1.5,
-    borderColor: COLORS.g5,
-    borderRadius: 10,
-    paddingVertical: 7,
-    paddingHorizontal: 11,
-    fontSize: 14,
-    backgroundColor: COLORS.g6,
-  },
-  filterBtn: {
-    paddingHorizontal: 15,
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.g5,
-    borderRadius: 10,
-    backgroundColor: COLORS.g6,
-  },
-  filterText: {
+    flex: 1,
+    paddingVertical: 9,
     fontSize: 14,
     color: COLORS.g1,
-    fontWeight: '600',
+  },
+  statusFilters: {
+    paddingBottom: 12,
+  },
+  statusFiltersScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.pr,
+    borderColor: COLORS.pr,
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  filterChipTextActive: {
+    color: COLORS.white,
   },
   list: {
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   gridRow: {
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     marginBottom: 12,
   },
   rcard: {
     backgroundColor: COLORS.white,
-    width: '47%',
-    borderRadius: 14,
-    padding: 12,
+    width: '48%',
+    borderRadius: 16,
+    padding: 14,
     ...SHADOWS.sh,
-    borderTopWidth: 3,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
     position: 'relative',
+    gap: 4,
   },
-  'rcard-occupied': { borderTopColor: COLORS.pr },
-  'rcard-empty': { borderTopColor: COLORS.g5 },
-  'rcard-debt': { borderTopColor: COLORS.rose },
-  'rcard-maintenance': { borderTopColor: COLORS.amber },
+  rcardEmpty: {
+    backgroundColor: '#f8fafc',
+  },
   rcardIco: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   rnum: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '900',
     color: COLORS.g1,
   },
   rname: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.g3,
-    marginTop: 2,
     fontWeight: '600',
   },
   rprice: {
     fontSize: 11,
     color: COLORS.g2,
     fontWeight: '700',
-    marginTop: 4,
+    marginTop: 2,
+  },
+  badgeRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    gap: 4,
+    flexWrap: 'wrap',
   },
   highlightBadge: {
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: '#fee2e2',
-    borderColor: '#ef4444',
-    borderWidth: 1.2,
+    backgroundColor: '#ffe4e6',
+    borderColor: '#f43f5e',
+    borderWidth: 1,
     borderRadius: 8,
     paddingVertical: 2,
     paddingHorizontal: 6,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    elevation: 3,
-    shadowColor: '#ef4444',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2
+    ...SHADOWS.sh,
   },
   highlightTxt: {
-    color: '#b91c1c',
-    fontSize: 8.5,
+    color: '#be123c',
+    fontSize: 8,
     fontWeight: '900',
   },
   rcardAdd: {
     borderStyle: 'dashed',
     borderWidth: 2,
-    borderColor: COLORS['pr-l'],
-    backgroundColor: COLORS['pr-ll'],
+    borderColor: 'rgba(22, 163, 74, 0.25)',
+    backgroundColor: 'rgba(22, 163, 74, 0.02)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderTopWidth: 2, // Overriding the 3px border from rcard
   },
   raddIcoWrap: {
     width: 40,
@@ -448,65 +500,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS['pr-l'],
-    marginBottom: 8,
+    borderColor: 'rgba(22, 163, 74, 0.15)',
+    marginBottom: 6,
   },
   raddTxtGrid: {
     fontSize: 12,
     color: COLORS.pr,
     fontWeight: '800',
   },
-  statusFilters: {
-    backgroundColor: COLORS.white,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.g5,
-  },
-  statusFiltersScroll: {
-    paddingHorizontal: 14,
-    gap: 8,
-  },
-  filterChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: COLORS.g6,
-    borderWidth: 1,
-    borderColor: COLORS.g5,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS['pr-ll'],
-    borderColor: COLORS.pr,
-  },
-  filterChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.g3,
-  },
-  filterChipTextActive: {
-    color: COLORS.pr,
-  },
   overdueBadge: {
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: '#ef4444',
+    backgroundColor: COLORS.rose,
     borderRadius: 8,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    borderWidth: 2,
-    borderColor: '#fff',
-    elevation: 4,
-    shadowColor: '#ef4444',
-    shadowOpacity: 0.5,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 3
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderWidth: 1.5,
+    borderColor: COLORS.white,
+    ...SHADOWS.sh,
   },
   overdueTxt: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 8.5,
     fontWeight: '900',
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748b',
   },
 });
 

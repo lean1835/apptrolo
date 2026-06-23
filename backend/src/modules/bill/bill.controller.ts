@@ -89,10 +89,23 @@ export const updateBill = catchAsync(async (req: Request, res: Response) => {
   if (req.body.sent !== undefined) {
     bill.sent = req.body.sent;
   }
+
+  if (req.body.total !== undefined) {
+    bill.total = req.body.total;
+  }
   
   const wasCollected = bill.collected;
   if (req.body.collected !== undefined) {
     bill.collected = req.body.collected;
+  }
+
+  let partialUnpaidDiff = 0;
+  if (req.body.collected && req.body.amountPaid !== undefined) {
+    const amountPaid = parseFloat(req.body.amountPaid);
+    if (!isNaN(amountPaid) && amountPaid < bill.total) {
+      partialUnpaidDiff = bill.total - amountPaid;
+      bill.total = amountPaid;
+    }
   }
 
   await bill.save();
@@ -103,8 +116,13 @@ export const updateBill = catchAsync(async (req: Request, res: Response) => {
     try {
       const room = await RoomModel.findById(bill.room);
       if (room) {
-        if (room.status === 'debt' || (room.status as any) === 'Debt') {
-          room.status = 'occupied';
+        if (partialUnpaidDiff > 0) {
+          room.status = 'debt';
+          (room as any).debtAmount = ((room as any).debtAmount || 0) + partialUnpaidDiff;
+        } else {
+          if (room.status === 'debt' || (room.status as any) === 'Debt') {
+            room.status = 'occupied';
+          }
         }
 
         // Automatically transition room to next cycle on payment, regardless of when it is paid
@@ -133,9 +151,14 @@ export const updateBill = catchAsync(async (req: Request, res: Response) => {
         await room.save();
 
         const totalFormatted = Math.round(bill.total).toLocaleString('vi-VN') + ' đ';
+        let logMsg = `${room.name} · Đã thu tiền ${totalFormatted}`;
+        if (partialUnpaidDiff > 0) {
+          const diffFormatted = Math.round(partialUnpaidDiff).toLocaleString('vi-VN') + ' đ';
+          logMsg += ` (Khách đóng thiếu nợ ${diffFormatted})`;
+        }
         await activityService.logActivityByLodge(
           room.lodge.toString(),
-          `${room.name} · Đã thu tiền ${totalFormatted}`,
+          logMsg,
           'bill'
         );
       }

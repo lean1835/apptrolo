@@ -48,3 +48,19 @@ export const changePassword = catchAsync(async (req: Request, res: Response) => 
     data: { message: 'Đổi mật khẩu thành công' },
   });
 });
+
+export const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  await authService.forgotPassword(req.body);
+  res.status(200).json({
+    success: true,
+    message: 'Mã xác thực OTP đã được gửi về email của bạn',
+  });
+});
+
+export const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  await authService.resetPassword(req.body);
+  res.status(200).json({
+    success: true,
+    message: 'Đặt lại mật khẩu thành công',
+  });
+});

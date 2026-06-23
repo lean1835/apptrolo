@@ -36,7 +36,7 @@ const ChangePasswordScreen: React.FC = () => {
 
     setSaving(true);
     try {
-      await axiosInstance.post('/profile/change-password', {
+      await axiosInstance.post('/auth/change-password', {
         oldPassword: form.oldPassword.trim(),
         newPassword: form.newPassword.trim(),
       });
@@ -56,7 +56,7 @@ const ChangePasswordScreen: React.FC = () => {
       style={{ flex: 1 }}
     >
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top + 10, 24) }]}>
         <TouchableOpacity style={styles.tbback} onPress={() => router.back()}>
           <BackIcon size={24} color={COLORS.g2} />
         </TouchableOpacity>

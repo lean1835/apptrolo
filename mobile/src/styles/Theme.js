@@ -19,8 +19,8 @@ export const COLORS = {
   g5: '#e2e8f0',
   g6: '#f8fafc',
   white: '#fff',
-  bg: '#f0fdf4',
-  hero_gradient: ['#166534', '#16a34a', '#22c55e'],
+  bg: '#f8fafc',
+  hero_gradient: ['#064e3b', '#059669', '#10b981'],
 };
 
 export const SIZES = {
@@ -31,17 +31,17 @@ export const SIZES = {
 
 export const SHADOWS = {
   sh: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
     elevation: 2,
   },
   sh2: {
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    elevation: 6,
   },
 };

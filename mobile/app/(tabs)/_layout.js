@@ -48,7 +48,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="debt"
         options={{
-          title: 'Công nợ',
+          title: 'Thu tiền',
           tabBarIcon: TabBarIcon(MoneyIcon),
         }}
       />

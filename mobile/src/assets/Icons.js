@@ -201,3 +201,25 @@ export const AlertTriangleIcon = ({ size = 24, color = "currentColor", strokeWid
     <Circle cx="12" cy="17" r="1" fill={color} />
   </Svg>
 );
+
+export const CalculatorIcon = ({ size = 24, color = "currentColor", strokeWidth = 1.8, ...props }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <Rect x="4" y="2" width="16" height="20" rx="2" ry="2" fill={color} fillOpacity={0.12} />
+    <Line x1="8" y1="6" x2="16" y2="6" />
+    <Line x1="16" y1="14" x2="16" y2="18" />
+    <Circle cx="8" cy="10" r="1.5" fill={color} />
+    <Circle cx="12" cy="10" r="1.5" fill={color} />
+    <Circle cx="16" cy="10" r="1.5" fill={color} />
+    <Circle cx="8" cy="14" r="1.5" fill={color} />
+    <Circle cx="12" cy="14" r="1.5" fill={color} />
+    <Circle cx="8" cy="18" r="1.5" fill={color} />
+    <Circle cx="12" cy="18" r="1.5" fill={color} />
+  </Svg>
+);
+
+export const SearchIcon = ({ size = 24, color = "currentColor", strokeWidth = 1.8, ...props }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <Circle cx="11" cy="11" r="8" fill={color} fillOpacity={0.12} />
+    <Line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </Svg>
+);

@@ -35,10 +35,10 @@ const SettingsScreen = () => {
     }, [])
   );
 
-  const SettingItem = ({ icon: Icon, bg, lbl, sub, onPress }) => (
+  const SettingItem = ({ icon: Icon, iconColor, iconBg, lbl, sub, onPress }) => (
     <TouchableOpacity style={styles.sitem} onPress={onPress}>
-      <View style={[styles.siconwrap, { backgroundColor: bg }]}>
-        <Icon size={18} color="#fff" />
+      <View style={[styles.siconwrap, { backgroundColor: iconBg }]}>
+        <Icon size={18} color={iconColor} />
       </View>
       <View style={styles.sbody}>
         <Text style={styles.slbl}>{lbl}</Text>
@@ -52,73 +52,61 @@ const SettingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.topbar, { paddingTop: Math.max(insets.top, 14) }]}>
+      <View style={[styles.topbar, { paddingTop: Math.max(insets.top + 10, 24) }]}>
         <Text style={styles.tbtitle}>Cài đặt</Text>
       </View>
       
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.cardSection}>
           <Text style={styles.secTitle}>Nhà trọ</Text>
           <SettingItem 
             icon={BuildingIcon} 
-            bg="#16a34a" 
+            iconColor="#16a34a"
+            iconBg="rgba(22, 163, 74, 0.1)"
             lbl="Thông tin nhà trọ" 
             sub={lodge?.name || "Đang tải..."} 
             onPress={() => router.push('/lodge-info')} 
           />
           <SettingItem 
             icon={BoltIcon} 
-            bg="#d97706" 
+            iconColor="#d97706"
+            iconBg="rgba(217, 119, 6, 0.1)"
             lbl="Đơn giá điện / nước" 
             sub={prices ? `${Number(prices.elec).toLocaleString('vi')}đ/kWh · ${prices.waterMode === 'meter' ? Number(prices.water).toLocaleString('vi') + 'đ/m³' : Number(prices.waterFixed).toLocaleString('vi') + 'đ/ng'}` : "Đang tải..."} 
             onPress={() => router.push('/utility-price')} 
           />
         </View>
 
-        <View style={styles.cardSection}>
-          <Text style={styles.secTitle}>Dữ liệu</Text>
-          <SettingItem 
-            icon={CloudIcon} 
-            bg="#0284c7" 
-            lbl="Sao lưu dữ liệu" 
-            sub="Export JSON" 
-            onPress={() => Alert.alert('Thông báo', 'Tính năng Sao lưu dữ liệu đang được phát triển.')} 
-          />
-          <SettingItem 
-            icon={RestoreIcon} 
-            bg="#7c3aed" 
-            lbl="Khôi phục dữ liệu" 
-            sub="Import từ file" 
-            onPress={() => Alert.alert('Thông báo', 'Tính năng Khôi phục dữ liệu đang được phát triển.')} 
-          />
-        </View>
 
         <View style={styles.cardSection}>
           <Text style={styles.secTitle}>Tài khoản</Text>
           <SettingItem 
             icon={UserIcon} 
-            bg="#16a34a" 
+            iconColor="#16a34a"
+            iconBg="rgba(22, 163, 74, 0.1)"
             lbl="Thông tin tài khoản" 
             sub={user?.email || (user?.phone ? `Người dùng ${user.phone}` : 'Chưa đăng nhập')} 
             onPress={() => router.push('/account-info')} 
           />
           <SettingItem 
             icon={LockIcon} 
-            bg="#475569" 
+            iconColor="#475569"
+            iconBg="rgba(71, 85, 105, 0.1)"
             lbl="Đổi mật khẩu" 
             sub="Xác nhận qua email" 
             onPress={() => router.push('/change-password')} 
           />
           <SettingItem 
             icon={LogoutIcon} 
-            bg="#e11d48" 
+            iconColor="#e11d48"
+            iconBg="rgba(225, 29, 72, 0.1)"
             lbl="Đăng xuất" 
             sub={user?.phone || ''} 
             onPress={logout} 
           />
         </View>
 
-        <Text style={styles.versionTxt}>App Trọ Lỏ Lỏ v1.0.0 · Made with ♥</Text>
+        <Text style={styles.versionTxt}>Hệ thống quản lý nhà trọ v1.0.2 · </Text>
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -132,30 +120,34 @@ const styles = StyleSheet.create({
   },
   topbar: {
     backgroundColor: COLORS.white,
-    paddingTop: 50,
     paddingBottom: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderColor: '#e2e8f0',
     ...SHADOWS.sh,
   },
   tbtitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
     color: COLORS.g1,
+    letterSpacing: -0.3,
   },
   scroll: {
-    padding: 14,
-    gap: 12,
+    padding: 16,
+    gap: 16,
   },
   cardSection: {
     backgroundColor: COLORS.white,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
     ...SHADOWS.sh,
   },
   secTitle: {
     backgroundColor: COLORS.g6,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     fontSize: 10,
     fontWeight: '800',
     color: COLORS.g4,
@@ -166,10 +158,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 13,
-    paddingHorizontal: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.g6,
+    borderBottomColor: '#f1f5f9',
   },
   siconwrap: {
     width: 38,

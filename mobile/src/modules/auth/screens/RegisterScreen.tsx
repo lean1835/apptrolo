@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
 import { Input, Button } from '../../../components/Common';
-import { BackIcon } from '../../../assets/Icons';
+import { BackIcon, AlertTriangleIcon } from '../../../assets/Icons';
 import { useAuth } from '../../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -109,7 +109,12 @@ const RegisterScreen = () => {
           </View>
         </View>
 
-        {error ? <Text style={styles.eTxt}>{error}</Text> : null}
+        {error ? (
+          <View style={styles.errorBanner}>
+            <AlertTriangleIcon size={18} color={COLORS.rose} />
+            <Text style={styles.eTxt}>{error}</Text>
+          </View>
+        ) : null}
 
         <Button title="Đăng ký ngay" onPress={handleRegister} full style={{ marginBottom: 15 }} />
 
@@ -169,12 +174,24 @@ const styles = StyleSheet.create({
   aform: {
     gap: 2,
   },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff1f2',
+    borderWidth: 1,
+    borderColor: '#fecdd3',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 8,
+    marginBottom: 12,
+  },
   eTxt: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.rose,
     fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 12,
+    flexShrink: 1,
   },
   alink: {
     fontSize: 13,

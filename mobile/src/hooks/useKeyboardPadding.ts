@@ -8,7 +8,7 @@ import { Keyboard, Platform } from 'react-native';
  * @param scrollRef - ref to the ScrollView component
  * @returns keyboardHeight - current keyboard height (0 when hidden)
  */
-export const useKeyboardPadding = (scrollRef) => {
+export const useKeyboardPadding = (scrollRef: any) => {
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     useEffect(() => {

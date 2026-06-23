@@ -56,3 +56,29 @@ export const changePasswordSchema = Joi.object({
     'any.required': 'Mật khẩu mới là bắt buộc',
   }),
 });
+
+export const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.empty': 'Email không được để trống',
+    'string.email': 'Email không đúng định dạng',
+    'any.required': 'Email là bắt buộc',
+  }),
+});
+
+export const resetPasswordSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.empty': 'Email không được để trống',
+    'string.email': 'Email không đúng định dạng',
+    'any.required': 'Email là bắt buộc',
+  }),
+  otp: Joi.string().length(6).required().messages({
+    'string.empty': 'Mã OTP không được để trống',
+    'string.length': 'Mã OTP phải có đúng 6 ký tự',
+    'any.required': 'Mã OTP là bắt buộc',
+  }),
+  newPassword: Joi.string().min(6).required().messages({
+    'string.empty': 'Mật khẩu mới không được để trống',
+    'string.min': 'Mật khẩu mới phải dài ít nhất 6 ký tự',
+    'any.required': 'Mật khẩu mới là bắt buộc',
+  }),
+});

@@ -5,6 +5,7 @@ import LodgeModel from '@modules/lodge/lodge.model';
 import UtilityPriceModel from '@modules/utilityPrice/utilityPrice.model';
 import { JWT_SECRET, JWT_EXPIRATION } from '@common/config/environment';
 import { ApiError } from '@common/utils/ApiError';
+import { sendOTPEmail } from '@common/utils/email';
 import { IUser } from '@common/interfaces/user.interface';
 import mongoose from 'mongoose';
 
@@ -136,6 +137,51 @@ export class AuthService {
     }
 
     user.password = await bcrypt.hash(payload.newPassword, 10);
+    await user.save();
+  }
+
+  public async forgotPassword(payload: { email: string }): Promise<void> {
+    const emailLower = payload.email.trim().toLowerCase();
+    const user = await UserModel.findOne({ email: emailLower });
+    if (!user) {
+      throw new ApiError(404, 'Không tìm thấy người dùng với email này');
+    }
+
+    // Generate a random 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    user.resetPasswordOTP = otp;
+    user.resetPasswordOTPExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes validity
+    await user.save();
+
+    // Send email to user
+    await sendOTPEmail(emailLower, otp);
+
+    // Log to console for testing
+    console.log(`\n==================================================`);
+    console.log(`[RESET PASSWORD] OTP for email ${emailLower} is: ${otp}`);
+    console.log(`==================================================\n`);
+  }
+
+  public async resetPassword(payload: { email: string; otp: string; newPassword: string }): Promise<void> {
+    const emailLower = payload.email.trim().toLowerCase();
+    const user = await UserModel.findOne({ email: emailLower });
+    if (!user) {
+      throw new ApiError(404, 'Không tìm thấy người dùng');
+    }
+
+    if (!user.resetPasswordOTP || user.resetPasswordOTP !== payload.otp) {
+      throw new ApiError(400, 'Mã xác thực OTP không chính xác');
+    }
+
+    if (!user.resetPasswordOTPExpires || user.resetPasswordOTPExpires.getTime() < Date.now()) {
+      throw new ApiError(400, 'Mã xác thực OTP đã hết hạn');
+    }
+
+    // Update password
+    user.password = await bcrypt.hash(payload.newPassword, 10);
+    user.resetPasswordOTP = '';
+    user.resetPasswordOTPExpires = null;
     await user.save();
   }
 }

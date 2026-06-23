@@ -1,3 +1,4 @@
+
 import mongoose, { Schema } from 'mongoose';
 import { IRoom } from '@common/interfaces/room.interface';
 
@@ -24,6 +25,7 @@ const RoomSchema = new Schema<IRoom>(
     contractMonths: { type: Number, default: 0 },
     contractPrepaid: { type: Number, default: 0 },
     lodge: { type: Schema.Types.ObjectId, ref: 'Lodges', required: true },
+    debtAmount: { type: Number, default: 0 },
   },
   {
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },

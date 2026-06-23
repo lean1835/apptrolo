@@ -28,7 +28,7 @@ const AccountInfoScreen = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const res = await axiosInstance.get('/profile/me');
+                const res = await axiosInstance.get('/auth/me');
                 if (res.data) {
                     setForm({
                         name: res.data.name || '',
@@ -58,7 +58,7 @@ const AccountInfoScreen = () => {
                 email: form.email,
             };
             console.log('Update profile with:', updateData);
-            const res = await axiosInstance.post('/profile/update', updateData);
+            const res = await axiosInstance.post('/auth/update', updateData);
             console.log('API Update res:', res.data);
 
             // Updating local authentication state

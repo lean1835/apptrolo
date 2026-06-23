@@ -16,7 +16,7 @@ const seedDefaultData = async (): Promise<void> => {
       const user = await UserModel.create({
         name: 'Hệ thống (Fix)',
         phone: '0912345678',
-        email: 'admin@apptrololo.com',
+        email: 'lean1835.vac@gmail.com',
         password: hashedPassword,
       });
 
@@ -43,9 +43,15 @@ const seedDefaultData = async (): Promise<void> => {
       user.lodge = lodge._id;
       await user.save();
 
-      logger.info('✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456');
+      logger.info('✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456 / Email: lean1835.vac@gmail.com');
     } else {
-      logger.info('ℹ️ Seeder: Default user already exists.');
+      if (existingUser.email !== 'lean1835.vac@gmail.com') {
+        existingUser.email = 'lean1835.vac@gmail.com';
+        await existingUser.save();
+        logger.info('✅ Seeder: Default user email updated to lean1835.vac@gmail.com');
+      } else {
+        logger.info('ℹ️ Seeder: Default user already exists and email is up to date.');
+      }
     }
   } catch (error) {
     logger.error('❌ Seeder: Failed to seed default user data', error);
