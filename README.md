@@ -2,7 +2,7 @@
   <img src="mobile/assets/images/renthome.png" alt="Nhà Trọ Số Logo" width="100" height="100" style="border-radius: 20px;" />
 </p>
 
-<h1 align="center">Nhà Trọ Số</h1>
+<h1 align="center">Haven</h1>
 <p align="center"><strong>Giải pháp số hóa quản lý nhà trọ</strong></p>
 
 <p align="center">
