@@ -35,7 +35,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/renthome.png",
           "color": "#16a34a"
         }
       ],
@@ -50,7 +50,9 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -59,7 +61,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "72e1940d-ddfb-479c-9261-a8f96cdd4341"
+        "projectId": "f2348b49-8001-4306-8b9f-ec508c455ce1"
       }
     },
     "owner": "lean1803"
