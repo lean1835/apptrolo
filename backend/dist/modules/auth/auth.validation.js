@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changePasswordSchema = exports.updateProfileSchema = exports.loginSchema = exports.registerSchema = void 0;
+exports.resetPasswordSchema = exports.forgotPasswordSchema = exports.changePasswordSchema = exports.updateProfileSchema = exports.loginSchema = exports.registerSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
 exports.registerSchema = joi_1.default.object({
     name: joi_1.default.string().required().messages({
@@ -51,6 +51,30 @@ exports.changePasswordSchema = joi_1.default.object({
     oldPassword: joi_1.default.string().required().messages({
         'string.empty': 'Mật khẩu cũ không được để trống',
         'any.required': 'Mật khẩu cũ là bắt buộc',
+    }),
+    newPassword: joi_1.default.string().min(6).required().messages({
+        'string.empty': 'Mật khẩu mới không được để trống',
+        'string.min': 'Mật khẩu mới phải dài ít nhất 6 ký tự',
+        'any.required': 'Mật khẩu mới là bắt buộc',
+    }),
+});
+exports.forgotPasswordSchema = joi_1.default.object({
+    email: joi_1.default.string().email().required().messages({
+        'string.empty': 'Email không được để trống',
+        'string.email': 'Email không đúng định dạng',
+        'any.required': 'Email là bắt buộc',
+    }),
+});
+exports.resetPasswordSchema = joi_1.default.object({
+    email: joi_1.default.string().email().required().messages({
+        'string.empty': 'Email không được để trống',
+        'string.email': 'Email không đúng định dạng',
+        'any.required': 'Email là bắt buộc',
+    }),
+    otp: joi_1.default.string().length(6).required().messages({
+        'string.empty': 'Mã OTP không được để trống',
+        'string.length': 'Mã OTP phải có đúng 6 ký tự',
+        'any.required': 'Mã OTP là bắt buộc',
     }),
     newPassword: joi_1.default.string().min(6).required().messages({
         'string.empty': 'Mật khẩu mới không được để trống',

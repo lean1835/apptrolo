@@ -486,7 +486,7 @@ const HomeScreen = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchData(true);
+      fetchData(false);
     }, [fetchData])
   );
 

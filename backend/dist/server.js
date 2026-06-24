@@ -19,7 +19,7 @@ const seedDefaultData = async () => {
             const user = await auth_model_1.default.create({
                 name: 'Hệ thống (Fix)',
                 phone: '0912345678',
-                email: 'admin@apptrololo.com',
+                email: 'lean1835.vac@gmail.com',
                 password: hashedPassword,
             });
             const lodge = await lodge_model_1.default.create({
@@ -41,10 +41,17 @@ const seedDefaultData = async () => {
             await lodge.save();
             user.lodge = lodge._id;
             await user.save();
-            logger_1.logger.info('✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456');
+            logger_1.logger.info('✅ Seeder: Default user created successfully: SĐT: 0912345678 / MK: 123456 / Email: lean1835.vac@gmail.com');
         }
         else {
-            logger_1.logger.info('ℹ️ Seeder: Default user already exists.');
+            if (existingUser.email !== 'lean1835.vac@gmail.com') {
+                existingUser.email = 'lean1835.vac@gmail.com';
+                await existingUser.save();
+                logger_1.logger.info('✅ Seeder: Default user email updated to lean1835.vac@gmail.com');
+            }
+            else {
+                logger_1.logger.info('ℹ️ Seeder: Default user already exists and email is up to date.');
+            }
         }
     }
     catch (error) {

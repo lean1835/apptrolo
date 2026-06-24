@@ -17,11 +17,35 @@ const activity_model_1 = __importDefault(require("../activity/activity.model"));
 const activityService = new activity_service_1.ActivityService();
 class RoomService {
     async getRoomsByLodge(lodgeId) {
-        return await room_model_1.default.find({ lodge: lodgeId })
-            .populate('members')
-            .populate('meterReadings')
-            .populate('bills')
-            .populate('tenant');
+        const rooms = await room_model_1.default.find({ lodge: lodgeId })
+            .populate({
+            path: 'meterReadings',
+            options: { sort: { date: -1 }, limit: 6 }
+        })
+            .populate('tenant')
+            .lean();
+        return rooms.map(room => {
+            const ret = {
+                ...room,
+                id: room._id.toString(),
+            };
+            if (ret.tenant && typeof ret.tenant === 'object') {
+                ret.phone = ret.tenant.phone || '';
+                ret.tenantId = ret.tenant._id;
+                ret.tenant = ret.tenant.name || '';
+            }
+            else if (ret.tenant) {
+                ret.tenantId = ret.tenant;
+                ret.tenant = '';
+                ret.phone = '';
+            }
+            else {
+                ret.tenant = '';
+                ret.phone = '';
+                ret.tenantId = null;
+            }
+            return ret;
+        });
     }
     async getRoomById(roomId) {
         const room = await room_model_1.default.findById(roomId)
@@ -254,10 +278,35 @@ class RoomService {
                 const pWater = priorReadings.length > 0 ? priorReadings[0].water : (room.wp || 0);
                 const eUse = Math.max(0, payload.elec - pElec);
                 const wUse = Math.max(0, payload.water - pWater);
+                let billingMonths = 1;
+                if (room.checkin) {
+                    const checkinParts = room.checkin.split('-');
+                    if (checkinParts.length === 3) {
+                        const checkinYear = parseInt(checkinParts[0], 10);
+                        const checkinMonth = parseInt(checkinParts[1], 10);
+                        const totalMonths = Math.max(1, (year - checkinYear) * 12 + (month - checkinMonth));
+                        // Find how many bills already exist between checkinMonth and current month (exclusive)
+                        const existingBills = await bill_model_1.default.find({ room: roomId }).session(session);
+                        const billedMonthsCount = existingBills.filter(b => {
+                            const bParts = b.date.split('-');
+                            if (bParts.length !== 3)
+                                return false;
+                            const by = parseInt(bParts[0], 10);
+                            const bm = parseInt(bParts[1], 10);
+                            // Bill date is after checkin month and before current month
+                            const isAfterCheckin = by > checkinYear || (by === checkinYear && bm > checkinMonth);
+                            const isBeforeCurrent = by < year || (by === year && bm < month);
+                            return isAfterCheckin && isBeforeCurrent;
+                        }).length;
+                        billingMonths = Math.max(1, totalMonths - billedMonthsCount);
+                    }
+                }
                 const eAmt = eUse * (prices.elec || 0);
-                const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) : (wUse * (prices.water || 0));
-                const rent = parseFloat((room.price || 0).toString());
-                const fees = (prices.wifi || 0) + (prices.garbage || 0);
+                const wAmt = prices.waterMode === 'fixed'
+                    ? (prices.waterFixed || 0) * billingMonths
+                    : (wUse * (prices.water || 0));
+                const rent = parseFloat((room.price || 0).toString()) * billingMonths;
+                const fees = ((prices.wifi || 0) + (prices.garbage || 0)) * billingMonths;
                 const prepaid = room.contractPrepaid > 0 ? rent : 0;
                 const debtAmt = room.debtAmount || 0;
                 const total = rent + eAmt + wAmt + fees - prepaid + debtAmt;

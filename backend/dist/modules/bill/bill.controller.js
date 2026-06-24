@@ -79,6 +79,9 @@ exports.updateBill = (0, catchAsync_1.catchAsync)(async (req, res) => {
     if (req.body.sent !== undefined) {
         bill.sent = req.body.sent;
     }
+    if (req.body.total !== undefined) {
+        bill.total = req.body.total;
+    }
     const wasCollected = bill.collected;
     if (req.body.collected !== undefined) {
         bill.collected = req.body.collected;

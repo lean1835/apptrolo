@@ -7,6 +7,14 @@ exports.connectDatabase = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const environment_1 = require("./environment");
 const logger_1 = require("../utils/logger");
+const dns_1 = __importDefault(require("dns"));
+// Force public DNS resolution to bypass local SRV lookup refuse errors (ECONNREFUSED)
+try {
+    dns_1.default.setServers(['8.8.8.8', '1.1.1.1']);
+}
+catch (err) {
+    logger_1.logger.warn('Failed to set custom DNS servers', err);
+}
 const connectDatabase = async () => {
     try {
         await mongoose_1.default.connect(environment_1.MONGODB_URI);

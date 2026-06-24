@@ -11,6 +11,7 @@ const lodge_model_1 = __importDefault(require("../lodge/lodge.model"));
 const utilityPrice_model_1 = __importDefault(require("../utilityPrice/utilityPrice.model"));
 const environment_1 = require("../../common/config/environment");
 const ApiError_1 = require("../../common/utils/ApiError");
+const email_1 = require("../../common/utils/email");
 const mongoose_1 = __importDefault(require("mongoose"));
 class AuthService {
     async register(payload) {
@@ -122,6 +123,42 @@ class AuthService {
             throw new ApiError_1.ApiError(400, 'Mật khẩu cũ không chính xác');
         }
         user.password = await bcrypt_1.default.hash(payload.newPassword, 10);
+        await user.save();
+    }
+    async forgotPassword(payload) {
+        const emailLower = payload.email.trim().toLowerCase();
+        const user = await auth_model_1.default.findOne({ email: emailLower });
+        if (!user) {
+            throw new ApiError_1.ApiError(404, 'Không tìm thấy người dùng với email này');
+        }
+        // Generate a random 6-digit numeric OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordOTP = otp;
+        user.resetPasswordOTPExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes validity
+        await user.save();
+        // Send email to user
+        await (0, email_1.sendOTPEmail)(emailLower, otp);
+        // Log to console for testing
+        console.log(`\n==================================================`);
+        console.log(`[RESET PASSWORD] OTP for email ${emailLower} is: ${otp}`);
+        console.log(`==================================================\n`);
+    }
+    async resetPassword(payload) {
+        const emailLower = payload.email.trim().toLowerCase();
+        const user = await auth_model_1.default.findOne({ email: emailLower });
+        if (!user) {
+            throw new ApiError_1.ApiError(404, 'Không tìm thấy người dùng');
+        }
+        if (!user.resetPasswordOTP || user.resetPasswordOTP !== payload.otp) {
+            throw new ApiError_1.ApiError(400, 'Mã xác thực OTP không chính xác');
+        }
+        if (!user.resetPasswordOTPExpires || user.resetPasswordOTPExpires.getTime() < Date.now()) {
+            throw new ApiError_1.ApiError(400, 'Mã xác thực OTP đã hết hạn');
+        }
+        // Update password
+        user.password = await bcrypt_1.default.hash(payload.newPassword, 10);
+        user.resetPasswordOTP = '';
+        user.resetPasswordOTPExpires = null;
         await user.save();
     }
 }

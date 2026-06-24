@@ -9,6 +9,8 @@ const router = (0, express_1.Router)();
 // Public routes
 router.post('/register', (0, validate_middleware_1.validate)(auth_validation_1.registerSchema), auth_controller_1.register);
 router.post('/authenticate', (0, validate_middleware_1.validate)(auth_validation_1.loginSchema), auth_controller_1.authenticate);
+router.post('/forgot-password', (0, validate_middleware_1.validate)(auth_validation_1.forgotPasswordSchema), auth_controller_1.forgotPassword);
+router.post('/reset-password', (0, validate_middleware_1.validate)(auth_validation_1.resetPasswordSchema), auth_controller_1.resetPassword);
 // Protected routes (require authenticationMiddleware)
 router.get('/me', authen_middleware_1.authenticationMiddleware, auth_controller_1.getMe);
 router.post('/update', authen_middleware_1.authenticationMiddleware, (0, validate_middleware_1.validate)(auth_validation_1.updateProfileSchema), auth_controller_1.updateProfile);

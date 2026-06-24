@@ -27,12 +27,36 @@ export interface IRoomHistoryItem {
 }
 
 export class RoomService {
-  public async getRoomsByLodge(lodgeId: string): Promise<IRoom[]> {
-    return await RoomModel.find({ lodge: lodgeId })
-      .populate('members')
-      .populate('meterReadings')
-      .populate('bills')
-      .populate('tenant');
+  public async getRoomsByLodge(lodgeId: string): Promise<any[]> {
+    const rooms = await RoomModel.find({ lodge: lodgeId })
+      .populate({
+        path: 'meterReadings',
+        options: { sort: { date: -1 }, limit: 6 }
+      })
+      .populate('tenant')
+      .lean();
+
+    return rooms.map(room => {
+      const ret = {
+        ...room,
+        id: room._id.toString(),
+      } as any;
+      
+      if (ret.tenant && typeof ret.tenant === 'object') {
+        ret.phone = (ret.tenant as any).phone || '';
+        ret.tenantId = (ret.tenant as any)._id;
+        ret.tenant = (ret.tenant as any).name || '';
+      } else if (ret.tenant) {
+        ret.tenantId = ret.tenant;
+        ret.tenant = '';
+        ret.phone = '';
+      } else {
+        ret.tenant = '';
+        ret.phone = '';
+        ret.tenantId = null;
+      }
+      return ret;
+    });
   }
 
   public async getRoomById(roomId: string): Promise<IRoom> {
