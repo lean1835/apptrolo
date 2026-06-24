@@ -42,3 +42,33 @@
 2026-06-24 02:38:59 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
 2026-06-24 02:38:59 [info]: 🚀 Server running in development mode on port 8080
 2026-06-24 02:38:59 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 21:28:34 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 21:28:35 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 21:28:35 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 21:28:35 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 21:38:13 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 21:38:15 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 21:38:15 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 21:38:15 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 21:39:28 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã ghi điện nước", Type: meter
+2026-06-24 21:40:19 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã ghi điện nước", Type: meter
+2026-06-24 21:45:24 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã ghi điện nước", Type: meter
+2026-06-24 21:48:47 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 21:48:49 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 21:48:49 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 21:48:49 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 21:48:54 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 21:48:55 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 21:48:55 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 21:48:55 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 21:49:34 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 21:49:35 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 21:49:35 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 21:49:35 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 21:57:25 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã ghi điện nước", Type: meter
+2026-06-24 21:57:36 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã ghi điện nước", Type: meter
+2026-06-24 22:00:45 [info]: ✅ Successfully connected to MongoDB database
+2026-06-24 22:00:46 [info]: ℹ️ Seeder: Default user already exists and email is up to date.
+2026-06-24 22:00:46 [info]: 🚀 Server running in development mode on port 8080
+2026-06-24 22:00:46 [info]: 🔗 Health check available at http://localhost:8080/health
+2026-06-24 22:10:41 [info]: [LogActivity] User: 6a26bd081481b122cb7adda5, Text: "Fj · Đã ghi điện nước", Type: meter

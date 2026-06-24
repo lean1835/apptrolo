@@ -145,12 +145,14 @@ const LoginScreen: React.FC = () => {
                   },
                 ]}
               >
-                <View style={styles.logoGlow}>
-                  <Image
-                    source={require('../../../../assets/images/renthome.png')}
-                    style={styles.logoImage}
-                    resizeMode="contain"
-                  />
+                <View style={styles.logoShadow}>
+                  <View style={styles.logoGlow}>
+                    <Image
+                      source={require('../../../../assets/images/renthome.png')}
+                      style={styles.logoImage}
+                      resizeMode="cover"
+                    />
+                  </View>
                 </View>
                 <Text style={styles.brandName}>{t('loginTitle')}</Text>
                 <Text style={styles.brandSlogan}>{t('loginSub')}</Text>
@@ -317,22 +319,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  logoShadow: {
+    ...SHADOWS.sh2,
+    shadowColor: '#000',
+  },
   logoGlow: {
     width: 88,
     height: 88,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.2)',
-    ...SHADOWS.sh2,
-    shadowColor: '#000',
+    overflow: 'hidden',
   },
   logoImage: {
-    width: 68,
-    height: 68,
-    borderRadius: 16,
+    width: 128,
+    height: 128,
   },
   brandName: {
     fontSize: 30,
