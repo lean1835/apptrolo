@@ -10,16 +10,24 @@ interface ButtonProps {
   full?: boolean;
   style?: StyleProp<ViewStyle>;
   icon?: React.ComponentType<{ color: string; size: number }>;
+  disabled?: boolean;
+  loading?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ title, onPress, type = 'primary', full = false, style, icon: Icon }) => {
+export const Button: React.FC<ButtonProps> = ({ title, onPress, type = 'primary', full = false, style, icon: Icon, disabled, loading }) => {
   const iconColor = (type === 'primary' || type === 'green' || type === 'sky')
     ? '#fff' 
     : (COLORS[type as keyof typeof COLORS] as string) || COLORS.g1;
 
+  const handlePress = () => {
+    if (disabled || loading) return;
+    onPress();
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
+      disabled={disabled || loading}
       style={[
         styles.btn,
         type === 'primary' && styles.bprim,
@@ -28,9 +36,10 @@ export const Button: React.FC<ButtonProps> = ({ title, onPress, type = 'primary'
         type === 'rose' && styles.brose,
         type === 'sky' && styles.bsky,
         full && styles.bfull,
+        (disabled || loading) && { backgroundColor: COLORS.g4, opacity: 0.6 },
         style,
       ]}
-      onPress={onPress}
+      onPress={handlePress}
     >
       {Icon && (
         <View style={styles.btnIcon}>

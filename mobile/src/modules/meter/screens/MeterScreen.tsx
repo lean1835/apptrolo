@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
-import { BackIcon, BoltIcon, DropletIcon, UserIcon, AlertTriangleIcon } from '../../../assets/Icons';
+import { BackIcon, BoltIcon, DropletIcon, UserIcon, AlertTriangleIcon, LockIcon } from '../../../assets/Icons';
 import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -223,10 +223,14 @@ const MeterScreen = () => {
 
             <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
                 {isEarly && (
-                    <View style={styles.earlyWarning}>
-                       <AlertTriangleIcon size={16} color="#d97706" style={{ marginTop: 1 }} />
-                       <Text style={styles.earlyWarningTxt}>
-                          Bạn đang ghi chỉ số sớm! Ngày dự kiến thu tiền của phòng này là ngày {expectedDate ? `${expectedDate.getDate().toString().padStart(2,'0')}/${(expectedDate.getMonth() + 1).toString().padStart(2,'0')}/${expectedDate.getFullYear()}` : ''} (Cho phép ghi trước tối đa 3 ngày).
+                    <View style={styles.earlyWarningLocked}>
+                       <LockIcon size={16} color="#b91c1c" style={{ marginTop: 2 }} />
+                       <Text style={styles.earlyWarningTxtLocked}>
+                          Chưa đến hạn ghi điện nước! Phòng này chỉ được ghi từ ngày {(() => {
+                              const allowed = new Date(expectedDate);
+                              allowed.setDate(allowed.getDate() - 3);
+                              return `${allowed.getDate().toString().padStart(2,'0')}/${(allowed.getMonth() + 1).toString().padStart(2,'0')}/${allowed.getFullYear()}`;
+                          })()} (trước 3 ngày so với ngày thu dự kiến {expectedDate ? `${expectedDate.getDate().toString().padStart(2,'0')}/${(expectedDate.getMonth() + 1).toString().padStart(2,'0')}/${expectedDate.getFullYear()}` : ''}).
                        </Text>
                     </View>
                 )}
@@ -260,6 +264,7 @@ const MeterScreen = () => {
                                 value={form.elec}
                                 onChangeText={(v) => setForm({...form, elec: v})}
                                 error={form.elec !== '' && (parseFloat(form.elec) || 0) < (room?.calcPrevElec || 0) ? "Số mới < số cũ" : null}
+                                readonly={isEarly}
                             />
                         </View>
                     </View>
@@ -291,6 +296,7 @@ const MeterScreen = () => {
                                     value={form.water}
                                     onChangeText={(v) => setForm({...form, water: v})}
                                     error={form.water !== '' && (parseFloat(form.water) || 0) < (room?.calcPrevWater || 0) ? "Số mới < số cũ" : null}
+                                    readonly={isEarly}
                                 />
                             </View>
                         </View>
@@ -315,6 +321,7 @@ const MeterScreen = () => {
                        placeholder="YYYY-MM-DD"
                        value={form.date}
                        onChangeText={(v) => setForm({...form, date: v})}
+                       readonly={isEarly}
                    />
                    <Text style={{ fontSize: 10, color: COLORS.g3 }}>Nếu ghi muộn (sang tháng mới), hóa đơn tháng trước sẽ được tạo.</Text>
                 </View>
@@ -324,6 +331,7 @@ const MeterScreen = () => {
                     type="primary" 
                     onPress={() => handleSave()} 
                     loading={saving}
+                    disabled={isEarly}
                     full 
                     style={{ marginTop: 10 }} 
                 />
@@ -390,6 +398,24 @@ const styles = StyleSheet.create({
     },
     earlyWarningTxt: {
         color: '#b45309',
+        fontSize: 12,
+        fontWeight: '700',
+        lineHeight: 18,
+        flex: 1,
+    },
+    earlyWarningLocked: {
+        backgroundColor: '#fee2e2',
+        borderWidth: 1,
+        borderColor: '#ef4444',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 10,
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'flex-start',
+    },
+    earlyWarningTxtLocked: {
+        color: '#991b1b',
         fontSize: 12,
         fontWeight: '700',
         lineHeight: 18,

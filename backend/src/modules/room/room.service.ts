@@ -264,6 +264,74 @@ export class RoomService {
       throw new ApiError(404, 'Không tìm thấy phòng trọ');
     }
 
+    // Check if it's early warning lock
+    const parseDateStr = (dateStr: string): Date => {
+      if (!dateStr) return new Date();
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        return new Date(y, m, d);
+      }
+      return new Date(dateStr);
+    };
+
+    const checkinDateStr = room.checkin || '';
+    const roomBills = await BillModel.find({ room: roomId });
+    const roomReadings = await MeterReadingModel.find({ room: roomId });
+
+    const filteredBills = roomBills.filter((b: any) => !checkinDateStr || b.date >= checkinDateStr);
+    const filteredReadings = roomReadings.filter((r: any) => !checkinDateStr || r.date >= checkinDateStr);
+
+    const hasUnpaidBills = filteredBills.some((b: any) => !b.collected);
+    const inDebt = room.status?.toLowerCase() === 'debt' || hasUnpaidBills;
+
+    if (!inDebt) {
+      const today = new Date();
+      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+      // 1. Check createdAt if in future
+      if ((room as any).createdAt) {
+        const createdDate = new Date((room as any).createdAt);
+        const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+        if (todayOnly < createdDateOnly) {
+          throw new ApiError(400, 'Chưa đến hạn ghi điện nước (Chỉ được ghi trước tối đa 3 ngày so với ngày thu dự kiến)');
+        }
+      }
+
+      // 2. Standard checkin/readings logic
+      if (room.checkin) {
+        const checkinDate = parseDateStr(room.checkin);
+        if (!isNaN(checkinDate.getTime())) {
+          let latestDate = new Date(checkinDate);
+          if (filteredReadings && filteredReadings.length > 0) {
+            filteredReadings.forEach((r: any) => {
+              const d = parseDateStr(r.date);
+              if (!isNaN(d.getTime()) && d > latestDate) {
+                latestDate = d;
+              }
+            });
+          }
+
+          const expectedDate = new Date(latestDate);
+          expectedDate.setMonth(expectedDate.getMonth() + 1);
+          expectedDate.setDate(checkinDate.getDate());
+
+          const allowedStart = new Date(expectedDate);
+          allowedStart.setDate(allowedStart.getDate() - 3);
+
+          const allowedStartOnly = new Date(allowedStart.getFullYear(), allowedStart.getMonth(), allowedStart.getDate());
+
+          if (todayOnly < allowedStartOnly) {
+            const expDateStr = `${expectedDate.getDate().toString().padStart(2, '0')}/${(expectedDate.getMonth() + 1).toString().padStart(2, '0')}/${expectedDate.getFullYear()}`;
+            const allowedStartStr = `${allowedStart.getDate().toString().padStart(2, '0')}/${(allowedStart.getMonth() + 1).toString().padStart(2, '0')}/${allowedStart.getFullYear()}`;
+            throw new ApiError(400, `Chưa đến hạn ghi điện nước! Phòng này chỉ được ghi từ ngày ${allowedStartStr} (trước 3 ngày so với ngày thu dự kiến ${expDateStr}).`);
+          }
+        }
+      }
+    }
+
     const [yearStr, monthStr] = payload.date.split('-');
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10);
