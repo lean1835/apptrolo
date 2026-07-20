@@ -16,6 +16,7 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
+    "docx": "^9.7.1",
     "dotenv": "^16.3.1",
     "exceljs": "^4.4.0",
     "express": "^5.0.0",

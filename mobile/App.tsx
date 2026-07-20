@@ -1,14 +1,15 @@
 // @ts-nocheck
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, AppState, AppStateStatus } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import { COLORS } from './src/styles/Theme';
 import { HomeIcon, DoorIcon, MoneyIcon, SettingsIcon } from './src/assets/Icons';
+import { fetchAndSaveDynamicApiUrl } from './src/services/api';
 
 // New Modular Screens
 import LoginScreen from './src/modules/auth/screens/LoginScreen';
@@ -103,6 +104,23 @@ const AppContent = () => {
 };
 
 export default function App() {
+  useEffect(() => {
+    // Tải cấu hình lần đầu khi khởi chạy ứng dụng
+    fetchAndSaveDynamicApiUrl();
+
+    // Lắng nghe sự kiện chuyển đổi trạng thái của app (Background -> Foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        console.log('App returned to active foreground, fetching latest API config...');
+        fetchAndSaveDynamicApiUrl();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <LanguageProvider>
       <AuthProvider>

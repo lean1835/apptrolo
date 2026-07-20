@@ -3,17 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { APP_CONFIG, STORAGE_KEYS } from '../constants';
 
-// For physical devices, we need the machine's local IP.
+// For physical devices, we need the machine's local IP in development.
 // Expo provides this via hostUri in development.
 const getBaseUrl = (): string => {
-  const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  
-  // 1. If EXPO_PUBLIC_API_URL is explicitly set and is NOT localhost/127.0.0.1, use it directly (production/staging)
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    return envUrl;
-  }
-  
-  // 2. In development (especially on physical devices), resolve the machine's actual LAN IP on the fly
+  // In development (especially on physical devices), resolve the machine's actual LAN IP on the fly
   const debuggerHost = Constants.expoConfig?.hostUri || '';
   const localhost = debuggerHost.split(':')[0];
   
@@ -21,15 +14,38 @@ const getBaseUrl = (): string => {
     return `http://${localhost}:8080/api`;
   }
   
-  // 3. Last fallback to APP_CONFIG
-  return APP_CONFIG.API_URL;
+  // Last fallback if we are in production and CDN fetch hasn't completed yet
+  return 'http://localhost:8080/api';
 };
 
 const API_URL = getBaseUrl();
-console.log('Resolved mobile API URL:', API_URL);
+console.log('Resolved fallback mobile API URL:', API_URL);
+
+/**
+ * Tải cấu hình mới nhất từ CDN và lưu vào AsyncStorage để sử dụng cho lần khởi động tiếp theo hoặc các request sau đó.
+ */
+export const fetchAndSaveDynamicApiUrl = async (): Promise<string | null> => {
+  try {
+    console.log('Fetching dynamic config from:', APP_CONFIG.CONFIG_URL);
+    // Sử dụng fetch thuần để tránh đè interceptor hoặc tạo vòng lặp request vô tận
+    const response = await fetch(APP_CONFIG.CONFIG_URL);
+    if (!response.ok) {
+      throw new Error(`HTTP status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data && data.api_url) {
+      await AsyncStorage.setItem(STORAGE_KEYS.DYNAMIC_API_URL, data.api_url);
+      console.log('Successfully updated dynamic API URL:', data.api_url);
+      return data.api_url;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch dynamic API URL config:', error);
+  }
+  return null;
+};
 
 const axiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL, // Thiết lập fallback ban đầu
   headers: {
     'Content-Type': 'application/json',
   },
@@ -37,6 +53,17 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    try {
+      const savedApiUrl = await AsyncStorage.getItem(STORAGE_KEYS.DYNAMIC_API_URL);
+      if (savedApiUrl) {
+        config.baseURL = savedApiUrl;
+      } else {
+        config.baseURL = API_URL;
+      }
+    } catch (e) {
+      config.baseURL = API_URL;
+    }
+
     const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
