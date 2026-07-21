@@ -3,12 +3,13 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { LanguageProvider } from '../src/context/LanguageContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
-import { View, ActivityIndicator, Alert, Platform, LogBox } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Alert, Platform, LogBox, AppState, Text } from 'react-native';
 import { COLORS } from '../src/styles/Theme';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { fetchAndSaveDynamicApiUrl } from '../src/services/api';
 
 LogBox.ignoreLogs([
   'expo-notifications',
@@ -124,6 +125,38 @@ function AppLayout() {
 }
 
 export default function Root() {
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    // Chờ cấu hình cập nhật xong trước khi tải giao diện chính của ứng dụng
+    fetchAndSaveDynamicApiUrl().finally(() => {
+      setIsConfigLoaded(true);
+    });
+
+    // Lắng nghe sự kiện chuyển đổi trạng thái của app (Background -> Foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('App returned to active foreground, fetching latest API config...');
+        fetchAndSaveDynamicApiUrl();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  if (!isConfigLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg }}>
+        <ActivityIndicator size="large" color={COLORS.pr} />
+        <Text style={{ marginTop: 12, color: COLORS.g1, fontWeight: '600' }}>
+          Đang cập nhật cấu hình...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <LanguageProvider>

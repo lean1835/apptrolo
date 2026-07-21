@@ -17,23 +17,30 @@ export const fetchAndSaveDynamicApiUrl = async (): Promise<string | null> => {
   const timeoutId = setTimeout(() => controller.abort(), 3000); // Giới hạn 3 giây để tránh đứng app khi mất mạng
 
   try {
-    console.log('Fetching dynamic config from:', APP_CONFIG.CONFIG_URL);
-    // Sử dụng fetch thuần để tránh đè interceptor hoặc tạo vòng lặp request vô tận
-    const response = await fetch(APP_CONFIG.CONFIG_URL, { signal: controller.signal });
+    console.log('DEBUG: Fetching dynamic config from:', APP_CONFIG.CONFIG_URL);
+    // Thêm cache-buster query parameter và headers để tránh bị cache bởi CDN (Vercel) hoặc HTTP cache của thiết bị
+    const separator = APP_CONFIG.CONFIG_URL.includes('?') ? '&' : '?';
+    const cleanUrl = `${APP_CONFIG.CONFIG_URL}${separator}_t=${Date.now()}`;
+    const response = await fetch(cleanUrl, { 
+      signal: controller.signal
+    });
     clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`HTTP status: ${response.status}`);
     }
     const data = await response.json();
+    console.log('DEBUG: Fetched data from config.json:', data);
     if (data && data.api_url) {
       await AsyncStorage.setItem(STORAGE_KEYS.DYNAMIC_API_URL, data.api_url);
-      console.log('Successfully updated dynamic API URL:', data.api_url);
+      console.log('DEBUG: Saved new DYNAMIC_API_URL to AsyncStorage:', data.api_url);
       return data.api_url;
+    } else {
+      console.warn('DEBUG: data.api_url is missing in response:', data);
     }
   } catch (error) {
     clearTimeout(timeoutId);
-    console.warn('Failed to fetch dynamic API URL config:', error);
+    console.error('DEBUG: Failed to fetch dynamic API URL config:', error);
   }
   return null;
 };
@@ -49,14 +56,18 @@ axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
       const savedApiUrl = await AsyncStorage.getItem(STORAGE_KEYS.DYNAMIC_API_URL);
+      console.log('DEBUG: Request Interceptor - savedApiUrl in AsyncStorage:', savedApiUrl);
       if (savedApiUrl) {
         config.baseURL = savedApiUrl;
       } else {
         config.baseURL = API_URL;
       }
     } catch (e) {
+      console.error('DEBUG: Interceptor error:', e);
       config.baseURL = API_URL;
     }
+
+    console.log(`DEBUG: Requesting full URL -> ${config.baseURL}${config.url}`);
 
     const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
     if (token && config.headers) {

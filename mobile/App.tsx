@@ -1,10 +1,10 @@
 // @ts-nocheck
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Text, AppState, AppStateStatus } from 'react-native';
+import { StyleSheet, View, Text, AppState, AppStateStatus, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import { COLORS } from './src/styles/Theme';
@@ -104,9 +104,13 @@ const AppContent = () => {
 };
 
 export default function App() {
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+
   useEffect(() => {
-    // Tải cấu hình ngầm khi khởi chạy ứng dụng (không chặn giao diện)
-    fetchAndSaveDynamicApiUrl();
+    // Chờ cấu hình cập nhật xong trước khi tải giao diện chính của ứng dụng
+    fetchAndSaveDynamicApiUrl().finally(() => {
+      setIsConfigLoaded(true);
+    });
 
     // Lắng nghe sự kiện chuyển đổi trạng thái của app (Background -> Foreground)
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
@@ -120,6 +124,17 @@ export default function App() {
       subscription.remove();
     };
   }, []);
+
+  if (!isConfigLoaded) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={COLORS.pr} />
+        <Text style={{ marginTop: 12, color: COLORS.g1, fontWeight: '600' }}>
+          Đang cập nhật cấu hình...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <LanguageProvider>
