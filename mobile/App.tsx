@@ -105,7 +105,7 @@ const AppContent = () => {
 
 export default function App() {
   useEffect(() => {
-    // Tải cấu hình lần đầu khi khởi chạy ứng dụng
+    // Tải cấu hình ngầm khi khởi chạy ứng dụng (không chặn giao diện)
     fetchAndSaveDynamicApiUrl();
 
     // Lắng nghe sự kiện chuyển đổi trạng thái của app (Background -> Foreground)

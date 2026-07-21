@@ -1,21 +1,9 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { APP_CONFIG, STORAGE_KEYS } from '../constants';
-
-// For physical devices, we need the machine's local IP in development.
-// Expo provides this via hostUri in development.
+// Fallback mặc định duy nhất luôn là link Production trực tuyến
 const getBaseUrl = (): string => {
-  // In development (especially on physical devices), resolve the machine's actual LAN IP on the fly
-  const debuggerHost = Constants.expoConfig?.hostUri || '';
-  const localhost = debuggerHost.split(':')[0];
-  
-  if (localhost) {
-    return `http://${localhost}:8080/api`;
-  }
-  
-  // Last fallback if we are in production and CDN fetch hasn't completed yet
-  return 'http://localhost:8080/api';
+  return 'https://nhatrovuive-gplu.onrender.com/api';
 };
 
 const API_URL = getBaseUrl();
@@ -25,10 +13,15 @@ console.log('Resolved fallback mobile API URL:', API_URL);
  * Tải cấu hình mới nhất từ CDN và lưu vào AsyncStorage để sử dụng cho lần khởi động tiếp theo hoặc các request sau đó.
  */
 export const fetchAndSaveDynamicApiUrl = async (): Promise<string | null> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3000); // Giới hạn 3 giây để tránh đứng app khi mất mạng
+
   try {
     console.log('Fetching dynamic config from:', APP_CONFIG.CONFIG_URL);
     // Sử dụng fetch thuần để tránh đè interceptor hoặc tạo vòng lặp request vô tận
-    const response = await fetch(APP_CONFIG.CONFIG_URL);
+    const response = await fetch(APP_CONFIG.CONFIG_URL, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       throw new Error(`HTTP status: ${response.status}`);
     }
@@ -39,6 +32,7 @@ export const fetchAndSaveDynamicApiUrl = async (): Promise<string | null> => {
       return data.api_url;
     }
   } catch (error) {
+    clearTimeout(timeoutId);
     console.warn('Failed to fetch dynamic API URL config:', error);
   }
   return null;
