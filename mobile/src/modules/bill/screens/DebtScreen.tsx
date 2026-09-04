@@ -37,11 +37,19 @@ import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { useLanguage } from '../../../context/LanguageContext';
 
-const getMonthChoices = () => {
+const getMonthChoices = (billingDate = 25, earlyRecordDays = 3) => {
   const choices = [];
   const now = new Date();
+  
+  // Nếu ngày hiện tại chưa tới ngày mở cửa sổ chốt số (D - earlyRecordDays),
+  // kỳ của tháng hiện tại chưa đến hạn -> tháng đến hạn gần nhất là tháng trước!
+  let startMonthOffset = 0;
+  if (now.getDate() < (billingDate - earlyRecordDays)) {
+    startMonthOffset = 1;
+  }
+
   for (let i = 0; i < 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const d = new Date(now.getFullYear(), now.getMonth() - startMonthOffset - i, 1);
     choices.push({
       month: d.getMonth() + 1,
       year: d.getFullYear(),
@@ -49,6 +57,15 @@ const getMonthChoices = () => {
     });
   }
   return choices;
+};
+
+const getDefaultBillingMonth = (billingDate = 25, earlyRecordDays = 3) => {
+  const now = new Date();
+  if (now.getDate() < (billingDate - earlyRecordDays)) {
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return { month: d.getMonth() + 1, year: d.getFullYear() };
+  }
+  return { month: now.getMonth() + 1, year: now.getFullYear() };
 };
 
 const formatNumberWithCommas = (val) => {
@@ -95,8 +112,9 @@ const DebtScreen = () => {
   const [lodge, setLodge] = useState(null);
 
   // Date filtering state
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const defaultDate = getDefaultBillingMonth();
+  const [selectedMonth, setSelectedMonth] = useState(defaultDate.month);
+  const [selectedYear, setSelectedYear] = useState(defaultDate.year);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   // Tab state: 'draft' | 'unpaid' | 'paid' | 'debt'
@@ -122,6 +140,14 @@ const DebtScreen = () => {
       requestPermission();
     }
   }, []);
+
+  useEffect(() => {
+    const choices = getMonthChoices(lodge?.billingDate || 25, lodge?.earlyRecordDays !== undefined ? lodge.earlyRecordDays : 3);
+    if (choices.length > 0 && !choices.some(c => c.month === selectedMonth && c.year === selectedYear)) {
+      setSelectedMonth(choices[0].month);
+      setSelectedYear(choices[0].year);
+    }
+  }, [lodge, selectedMonth, selectedYear]);
 
   const fetchDebt = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -150,15 +176,27 @@ const DebtScreen = () => {
     setRefreshing(false);
   }, [fetchDebt]);
 
+  const filterParam = params?.filter as string | undefined;
+
   useFocusEffect(
     useCallback(() => {
-      fetchDebt(true);
-      if (params.filter) {
-        if (params.filter === 'unsent') setActiveTab('draft');
-        else if (params.filter === 'sent') setActiveTab('unpaid');
+      fetchDebt(allRooms.length === 0);
+      if (params?.month) {
+        const m = parseInt(params.month as string, 10);
+        if (!isNaN(m)) setSelectedMonth(m);
+      }
+      if (params?.year) {
+        const y = parseInt(params.year as string, 10);
+        if (!isNaN(y)) setSelectedYear(y);
+      }
+      if (params?.tab && typeof params.tab === 'string') {
+        setActiveTab(params.tab as string);
+      } else if (filterParam) {
+        if (filterParam === 'unsent') setActiveTab('draft');
+        else if (filterParam === 'sent') setActiveTab('unpaid');
         else setActiveTab('unpaid');
       }
-    }, [fetchDebt, params.filter])
+    }, [fetchDebt, filterParam, params?.month, params?.year, params?.tab, allRooms.length === 0])
   );
 
   // Categorize rooms based on selected month & year
@@ -281,16 +319,7 @@ const DebtScreen = () => {
         }
       }
 
-      // 1. Debt (Nợ đóng thiếu) tab: if room has positive debtAmount (show regardless of month)
-      if (room.debtAmount > 0 && isCurrentMonth) {
-        debt.push({
-          ...room,
-          displayAmount: room.debtAmount,
-          displayLabel: `Nợ đóng thiếu`
-        });
-      }
-      
-      // 2. Draft (Chưa chốt): no bill for this month yet
+      // 1. Draft (Chưa chốt): no bill for this month yet
       if (!monthBill) {
         if (hasReading) {
           // Has reading but no bill — needs bill creation
@@ -305,98 +334,138 @@ const DebtScreen = () => {
             displayLabel: 'Chưa ghi điện nước'
           });
         }
-        // else: too early, skip
-      } 
-      // 3. Unpaid (Chờ thu): has bill for selected month/year, but it's not collected
-      else if (monthBill && !monthBill.collected) {
-        // Find unpaid bills up to the selected month/year
-        const unpaidBillsUpToSelected = roomBills.filter(b => {
+
+        // Nếu phòng có hóa đơn cũ chưa thu (hoặc nợ cũ) khi đang ở tháng này
+        const pastUnpaidBills = roomBills.filter(b => {
           if (b.collected) return false;
           const parts = b.date.split('-');
           if (parts.length !== 3) return false;
           const by = parseInt(parts[0], 10);
           const bm = parseInt(parts[1], 10);
-          return by < selectedYear || (by === selectedYear && bm <= selectedMonth);
+          return by < selectedYear || (by === selectedYear && bm < selectedMonth);
         });
 
-        // Determine debtMonths (number of unpaid months starting from checkin up to selected billing month)
-        let debtMonths = 1;
-        if (room.checkin) {
-          const checkinDate = parseDate(room.checkin);
-          if (!isNaN(checkinDate.getTime())) {
-            const checkinYear = checkinDate.getFullYear();
-            const checkinMonth = checkinDate.getMonth() + 1;
-            debtMonths = Math.max(1, (selectedYear - checkinYear) * 12 + (selectedMonth - checkinMonth));
+        if (pastUnpaidBills.length > 0) {
+          const pastSum = pastUnpaidBills.reduce((acc, b) => acc + ((Number(b.total) || 0) - (Number(b.amountPaid) || 0)), 0);
+          debt.push({
+            ...room,
+            displayAmount: pastSum + (room.debtAmount || 0),
+            displayLabel: `Nợ ${pastUnpaidBills.length} kỳ cũ`,
+            unpaidCount: pastUnpaidBills.length,
+            unpaidBills: pastUnpaidBills,
+          });
+        } else if (room.debtAmount > 0 && isCurrentMonth) {
+          debt.push({
+            ...room,
+            displayAmount: room.debtAmount,
+            displayLabel: `Nợ đóng thiếu`,
+            unpaidCount: 0,
+            unpaidBills: [],
+          });
+        }
+      } 
+      // 2. Has bill for selected month/year
+      else {
+        const bTotal = Number(monthBill.total) || 0;
+        const bAmountPaid = Number(monthBill.amountPaid) || 0;
+        const isBillPaidFull = monthBill.collected || (bTotal > 0 && bAmountPaid >= bTotal);
+
+        if (isBillPaidFull) {
+          // 4. Paid (Đã thu đủ): has bill for selected month/year, and it is collected
+          paid.push({
+            ...room,
+            billId: monthBill.id || monthBill._id,
+            billTotal: monthBill.total,
+            amountPaid: monthBill.amountPaid || monthBill.total,
+            displayAmount: monthBill.total
+          });
+        } else {
+          // Find unpaid bills up to the selected month/year
+          const unpaidBillsUpToSelected = roomBills.filter(b => {
+            if (b.collected) return false;
+            const parts = b.date.split('-');
+            if (parts.length !== 3) return false;
+            const by = parseInt(parts[0], 10);
+            const bm = parseInt(parts[1], 10);
+            return by < selectedYear || (by === selectedYear && bm <= selectedMonth);
+          });
+
+          // Determine debtMonths (number of unpaid months starting from checkin up to selected billing month)
+          let debtMonths = 1;
+          if (room.checkin) {
+            const checkinDate = parseDate(room.checkin);
+            if (!isNaN(checkinDate.getTime())) {
+              const checkinYear = checkinDate.getFullYear();
+              const checkinMonth = checkinDate.getMonth() + 1;
+              debtMonths = Math.max(1, (selectedYear - checkinYear) * 12 + (selectedMonth - checkinMonth));
+            }
+          }
+
+          // Find prior readings (before the earliest unpaid bill month)
+          const checkinDateStr = room.checkin || '';
+          const filteredReadings = (room.meterReadings || []).filter(r => !checkinDateStr || r.date >= checkinDateStr);
+          const allSorted = [...filteredReadings].sort((a, b) => a.date.localeCompare(b.date));
+
+          let earliestUnpaidDate = null;
+          if (unpaidBillsUpToSelected.length > 0) {
+            const sortedUnpaid = [...unpaidBillsUpToSelected].sort((a, b) => a.date.localeCompare(b.date));
+            earliestUnpaidDate = sortedUnpaid[0].date;
+          }
+
+          let priorReading = null;
+          if (earliestUnpaidDate) {
+            const earliestParts = earliestUnpaidDate.split('-');
+            const earliestY = parseInt(earliestParts[0], 10);
+            const earliestM = parseInt(earliestParts[1], 10);
+            priorReading = [...allSorted]
+              .reverse()
+              .find(r => {
+                const parts = r.date.split('-');
+                const ry = parseInt(parts[0], 10);
+                const rm = parseInt(parts[1], 10);
+                return ry < earliestY || (ry === earliestY && rm < earliestM);
+              });
+          }
+
+          const pElecValue = priorReading ? priorReading.elec : (room.ep || 0);
+          const pWaterValue = priorReading ? priorReading.water : (room.wp || 0);
+
+          const thisMonthReadings = allSorted.find(r => {
+            const [y, m] = r.date.split('-');
+            return parseInt(y, 10) === selectedYear && parseInt(m, 10) === selectedMonth;
+          });
+
+          const latestReading = thisMonthReadings || (allSorted.length > 0 ? allSorted[allSorted.length - 1] : null);
+          const cElec = latestReading ? latestReading.elec : pElecValue;
+          const cWater = latestReading ? latestReading.water : pWaterValue;
+
+          const remainingBillAmount = Math.max(0, bTotal - bAmountPaid);
+          const isPartial = bAmountPaid > 0 && bAmountPaid < bTotal;
+          const hasAnyPartialBills = unpaidBillsUpToSelected.some(b => (Number(b.amountPaid) || 0) > 0);
+          const isDebt = isPartial || hasAnyPartialBills || (room.debtAmount || 0) > 0 || room.status === 'debt';
+
+          const roomItemData = {
+            ...room,
+            billId: monthBill.id || monthBill._id,
+            billTotal: monthBill.total,
+            amountPaid: bAmountPaid,
+            displayAmount: remainingBillAmount,
+            unpaidCount: unpaidBillsUpToSelected.length || 1,
+            unpaidBills: unpaidBillsUpToSelected.length > 0 ? unpaidBillsUpToSelected : [monthBill],
+            currentBillId: monthBill.id || monthBill._id
+          };
+
+          if (isDebt) {
+            // Đã nộp một phần (thu thiếu) hoặc đang có nợ
+            debt.push({
+              ...roomItemData,
+              displayLabel: 'Thu thiếu',
+            });
+          } else {
+            // Chờ thu: Chưa thu đồng nào
+            unpaid.push(roomItemData);
           }
         }
-
-        // Find prior readings (before the earliest unpaid bill month)
-        const checkinDateStr = room.checkin || '';
-        const filteredReadings = (room.meterReadings || []).filter(r => !checkinDateStr || r.date >= checkinDateStr);
-        const allSorted = [...filteredReadings].sort((a, b) => a.date.localeCompare(b.date));
-
-        let earliestUnpaidDate = null;
-        if (unpaidBillsUpToSelected.length > 0) {
-          const sortedUnpaid = [...unpaidBillsUpToSelected].sort((a, b) => a.date.localeCompare(b.date));
-          earliestUnpaidDate = sortedUnpaid[0].date;
-        }
-
-        let priorReading = null;
-        if (earliestUnpaidDate) {
-          const earliestParts = earliestUnpaidDate.split('-');
-          const earliestY = parseInt(earliestParts[0], 10);
-          const earliestM = parseInt(earliestParts[1], 10);
-          priorReading = [...allSorted]
-            .reverse()
-            .find(r => {
-              const parts = r.date.split('-');
-              const ry = parseInt(parts[0], 10);
-              const rm = parseInt(parts[1], 10);
-              return ry < earliestY || (ry === earliestY && rm < earliestM);
-            });
-        }
-
-        const pElecValue = priorReading ? priorReading.elec : (room.ep || 0);
-        const pWaterValue = priorReading ? priorReading.water : (room.wp || 0);
-
-        const thisMonthReadings = allSorted.find(r => {
-          const [y, m] = r.date.split('-');
-          return parseInt(y, 10) === selectedYear && parseInt(m, 10) === selectedMonth;
-        });
-
-        const latestReading = thisMonthReadings || (allSorted.length > 0 ? allSorted[allSorted.length - 1] : null);
-        const cElec = latestReading ? latestReading.elec : pElecValue;
-        const cWater = latestReading ? latestReading.water : pWaterValue;
-
-        const eUse = Math.max(0, cElec - pElecValue);
-        const wUse = Math.max(0, cWater - pWaterValue);
-
-        const eAmt = eUse * (prices.elec || 0);
-        const rent = (parseFloat(room.price) || 0) * debtMonths;
-        const fees = ((prices.wifi || 0) + (prices.garbage || 0)) * debtMonths;
-        const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) * debtMonths : (wUse * (prices.water || 0));
-        const prepaid = room.contractPrepaid > 0 ? rent : 0;
-
-        const calculatedTotal = rent + eAmt + wAmt + fees - prepaid;
-
-        unpaid.push({
-          ...room,
-          billId: monthBill.id || monthBill._id,
-          billTotal: monthBill.total,
-          displayAmount: calculatedTotal,
-          unpaidCount: unpaidBillsUpToSelected.length,
-          unpaidBills: unpaidBillsUpToSelected,
-          currentBillId: monthBill.id || monthBill._id
-        });
-      } 
-      // 4. Paid (Đã thu đủ): has bill for selected month/year, and it is collected
-      else if (monthBill && monthBill.collected) {
-        paid.push({
-          ...room,
-          billId: monthBill.id || monthBill._id,
-          billTotal: monthBill.total,
-          displayAmount: monthBill.total
-        });
       }
     });
 
@@ -407,14 +476,24 @@ const DebtScreen = () => {
 
   const summaryStats = useMemo(() => {
     const unpaidSum = unpaid.reduce((sum, item) => sum + (Number(item.displayAmount) || 0), 0);
-    const paidSum = paid.reduce((sum, item) => sum + (Number(item.displayAmount) || 0), 0);
+    const debtSum = debt.reduce((sum, item) => sum + (Number(item.displayAmount) || 0), 0);
+    const paidSum = paid.reduce((sum, item) => sum + (Number(item.displayAmount) || 0), 0) +
+      allBills.filter(b => {
+        if (!b.date) return false;
+        const parts = b.date.split('-');
+        return parseInt(parts[0], 10) === selectedYear && parseInt(parts[1], 10) === selectedMonth;
+      }).reduce((sum, b) => {
+        if (b.collected || (Number(b.amountPaid) || 0) >= (Number(b.total) || 0)) return 0;
+        return Number(b.amountPaid) || 0;
+      }, 0);
+
     return {
-      unpaidCount: unpaid.length,
-      unpaidSum,
+      unpaidCount: unpaid.length + debt.length,
+      unpaidSum: unpaidSum + debtSum,
       paidCount: paid.length,
       paidSum,
     };
-  }, [unpaid, paid]);
+  }, [unpaid, paid, debt, allBills, selectedYear, selectedMonth]);
 
   // Handle open Collect payment popup
   const handleOpenCollectModal = (roomItem) => {
@@ -428,7 +507,7 @@ const DebtScreen = () => {
     if (!selectedRoomForCollect) return;
 
     const amountPaidVal = parseFormattedNumber(collectAmountPaid);
-    if (isNaN(amountPaidVal) || amountPaidVal < 0) {
+    if (isNaN(amountPaidVal) || amountPaidVal <= 0) {
       Alert.alert("Lỗi", "Vui lòng nhập số tiền hợp lệ");
       return;
     }
@@ -436,49 +515,51 @@ const DebtScreen = () => {
     setIsCollecting(true);
     try {
       const unpaidBills = selectedRoomForCollect.unpaidBills || [];
+      const totalOwed = Number(selectedRoomForCollect.displayAmount) || 0;
+      const isPartialPayment = amountPaidVal < totalOwed;
+
       if (unpaidBills.length === 0) {
         // No bills exist, just reset status
-        await axiosInstance.put(`/rooms/${selectedRoomForCollect.id}`, { status: 'occupied' });
+        await axiosInstance.put(`/rooms/${selectedRoomForCollect.id}`, { status: isPartialPayment ? 'debt' : 'occupied' });
       } else {
         let remainingPaid = amountPaidVal;
         
         // Loop through bills and pay them down
         for (let i = 0; i < unpaidBills.length; i++) {
           const bill = unpaidBills[i];
-          const isLastBill = (i === unpaidBills.length - 1);
-          
-          if (isLastBill) {
-            // For the last bill, update with remaining amount (backend handles room.debtAmount if paid < total)
-            const targetTotal = (bill.id || bill._id) === selectedRoomForCollect.currentBillId
-              ? selectedRoomForCollect.displayAmount
-              : bill.total;
+          const bTotal = Number(bill.total) || 0;
+          const bPrevPaid = Number(bill.amountPaid) || 0;
+          const bRemaining = Math.max(0, bTotal - bPrevPaid);
+
+          if (remainingPaid <= 0) break;
+
+          if (remainingPaid >= bRemaining) {
             await axiosInstance.put(`/bills/${bill.id || bill._id}`, {
+              amountPaid: bTotal,
               collected: true,
-              amountPaid: remainingPaid,
-              total: targetTotal
             });
+            remainingPaid -= bRemaining;
           } else {
-            // Prior bills
-            if (remainingPaid >= bill.total) {
-              await axiosInstance.put(`/bills/${bill.id || bill._id}`, {
-                collected: true,
-                amountPaid: bill.total
-              });
-              remainingPaid -= bill.total;
-            } else {
-              await axiosInstance.put(`/bills/${bill.id || bill._id}`, {
-                collected: true,
-                amountPaid: remainingPaid
-              });
-              remainingPaid = 0;
-            }
+            await axiosInstance.put(`/bills/${bill.id || bill._id}`, {
+              amountPaid: bPrevPaid + remainingPaid,
+              collected: false,
+            });
+            remainingPaid = 0;
           }
         }
       }
 
-      Alert.alert("Thành công", "Đã ghi nhận thu tiền phòng trọ");
+      Alert.alert("Thành công", isPartialPayment ? "Đã ghi nhận thu một phần (thu thiếu)" : "Đã ghi nhận thu tiền phòng trọ");
       setIsCollectModalVisible(false);
-      fetchDebt();
+
+      // Tự động chuyển sang tab tương ứng
+      if (isPartialPayment) {
+        setActiveTab('debt');
+      } else {
+        setActiveTab('paid');
+      }
+
+      await fetchDebt();
     } catch (err) {
       Alert.alert("Lỗi", "Không thể ghi nhận thu tiền");
       console.error(err);
@@ -495,109 +576,58 @@ const DebtScreen = () => {
 
     const checkinDateStr = room.checkin || '';
     const filteredReadings = (room.meterReadings || []).filter(r => !checkinDateStr || r.date >= checkinDateStr);
-    const allSorted = [...filteredReadings].sort((a, b) => a.date.localeCompare(b.date));
-    
-    // Find all unpaid bills up to selectedMonth/selectedYear
+    // Tìm hóa đơn thực tế của phòng cho tháng đang chọn (hoặc hóa đơn gần nhất)
     const roomBills = allBills.filter(b => b.roomId === room.id || b.room === room.id);
-    const unpaidBills = roomBills.filter(b => {
-      if (b.collected) return false;
-      const parts = b.date.split('-');
-      if (parts.length !== 3) return false;
-      const by = parseInt(parts[0], 10);
-      const bm = parseInt(parts[1], 10);
-      return by < selectedYear || (by === selectedYear && bm <= selectedMonth);
-    });
+    const targetBill = roomBills.find(b => {
+      const parts = (b.date || '').split('-');
+      return parseInt(parts[0], 10) === selectedYear && parseInt(parts[1], 10) === selectedMonth;
+    }) || (roomBills.length > 0 ? roomBills[roomBills.length - 1] : null);
 
-    // Determine debtMonths (number of unpaid months starting from checkin up to selected billing month)
-    let debtMonths = 1;
-    if (room.checkin) {
-      const checkinDate = parseDate(room.checkin);
-      if (!isNaN(checkinDate.getTime())) {
-        const checkinYear = checkinDate.getFullYear();
-        const checkinMonth = checkinDate.getMonth() + 1;
-        debtMonths = Math.max(1, (selectedYear - checkinYear) * 12 + (selectedMonth - checkinMonth));
+    if (targetBill) {
+      const elecUsage = targetBill.elecUsage ?? 0;
+      const waterUsage = targetBill.waterUsage ?? 0;
+      const elecAmount = targetBill.elecAmount ?? 0;
+      const waterAmount = targetBill.waterAmount ?? 0;
+      const rent = targetBill.rent ?? 0;
+      const fees = (targetBill.wifiAmount || 0) + (targetBill.garbageAmount || 0);
+      const finalTotal = targetBill.total ?? 0;
+
+      const formattedExpectedDate = targetBill.date ? (() => {
+        const parts = targetBill.date.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return targetBill.date;
+      })() : '';
+
+      let qrUrl = '';
+      if (lodge && lodge.bank && lodge.bankAccount) {
+        const bankNameFormatted = (lodge.bank || '').replace(/\s+/g, '');
+        qrUrl = `https://img.vietqr.io/image/${bankNameFormatted}-${lodge.bankAccount}-qr_only.png?amount=${finalTotal}&addInfo=${encodeURIComponent(room.name + ' Thang ' + selectedMonth)}&accountName=${encodeURIComponent(lodge.bankName || lodge.name || '')}`;
       }
+
+      return {
+        cElec: targetBill.elecNew ?? 0,
+        pElecValue: targetBill.elecOld ?? 0,
+        eUse: elecUsage,
+        eAmt: elecAmount,
+        cWater: targetBill.waterNew ?? 0,
+        pWaterValue: targetBill.waterOld ?? 0,
+        wUse: waterUsage,
+        wAmt: waterAmount,
+        rent,
+        fees,
+        prepaid: targetBill.prepaidDeduction ?? 0,
+        priorDebt: 0,
+        total: finalTotal,
+        finalTotal,
+        qrUrl,
+        formattedExpectedDate,
+        targetMonth: selectedMonth,
+        targetYear: selectedYear,
+        debtMonths: 1
+      };
     }
 
-    // Earliest unpaid bill date to find prior reading
-    let earliestUnpaidDate = null;
-    if (unpaidBills.length > 0) {
-      const sortedUnpaid = [...unpaidBills].sort((a, b) => a.date.localeCompare(b.date));
-      earliestUnpaidDate = sortedUnpaid[0].date;
-    }
-
-    // Find prior readings (before the earliest unpaid bill month)
-    let priorReading = null;
-    if (earliestUnpaidDate) {
-      const earliestParts = earliestUnpaidDate.split('-');
-      const earliestY = parseInt(earliestParts[0], 10);
-      const earliestM = parseInt(earliestParts[1], 10);
-      priorReading = [...allSorted]
-        .reverse()
-        .find(r => {
-          const parts = r.date.split('-');
-          const ry = parseInt(parts[0], 10);
-          const rm = parseInt(parts[1], 10);
-          return ry < earliestY || (ry === earliestY && rm < earliestM);
-        });
-    }
-
-    const pElecValue = priorReading ? priorReading.elec : (room.ep || 0);
-    const pWaterValue = priorReading ? priorReading.water : (room.wp || 0);
-    
-    // Find latest reading for selectedMonth/selectedYear
-    const thisMonthReadings = allSorted.find(r => {
-      const [y, m] = r.date.split('-');
-      return parseInt(y, 10) === selectedYear && parseInt(m, 10) === selectedMonth;
-    });
-    
-    const latestReading = thisMonthReadings || (allSorted.length > 0 ? allSorted[allSorted.length - 1] : null);
-    const cElec = latestReading ? latestReading.elec : pElecValue;
-    const cWater = latestReading ? latestReading.water : pWaterValue;
-
-    const eUse = Math.max(0, cElec - pElecValue);
-    const wUse = Math.max(0, cWater - pWaterValue);
-    
-    const eAmt = eUse * (prices.elec || 0);
-    const rent = (parseFloat(room.price as string) || 0) * debtMonths;
-    const fees = ((prices.wifi || 0) + (prices.garbage || 0)) * debtMonths;
-    const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) * debtMonths : (wUse * (prices.water || 0));
-    const prepaid = room.contractPrepaid > 0 ? rent : 0;
-    
-    // Calculate total cumulatively
-    const finalTotal = rent + eAmt + wAmt + fees - prepaid;
-
-    // Expected due date
-    let expectedDate = null;
-    if (room.checkin) {
-      const checkinDate = parseDate(room.checkin);
-      if (!isNaN(checkinDate.getTime())) {
-        const checkinYear = checkinDate.getFullYear();
-        const checkinMonth = checkinDate.getMonth();
-        const checkinDay = checkinDate.getDate();
-        
-        const diffMonthsVal = (targetYear - checkinYear) * 12 + (targetMonth - checkinMonth);
-        const monthsToAdd = diffMonthsVal <= 0 ? 1 : diffMonthsVal;
-        expectedDate = new Date(checkinYear, checkinMonth + monthsToAdd, checkinDay);
-      }
-    }
-    const formattedExpectedDate = expectedDate
-      ? `${expectedDate.getDate().toString().padStart(2, '0')}/${(expectedDate.getMonth() + 1).toString().padStart(2, '0')}/${expectedDate.getFullYear()}`
-      : '';
-
-    // QR URL
-    let qrUrl = '';
-    if (lodge) {
-      const bankNameFormatted = (lodge.bankName || '').replace(/\s+/g, '');
-      if (lodge.bankName && lodge.bank) {
-        qrUrl = `https://img.vietqr.io/image/${bankNameFormatted}-${lodge.bank}-qr_only.png?amount=${finalTotal}&addInfo=${encodeURIComponent(room.name + ' Thang ' + (targetMonth + 1))}&accountName=${encodeURIComponent(lodge.name || '')}`;
-      }
-    }
-
-    return {
-      eUse, wUse, eAmt, wAmt, total: finalTotal, rent, prepaid, fees, cElec, cWater, pElecValue, pWaterValue,
-      priorDebt: 0, finalTotal, qrUrl, formattedExpectedDate, targetMonth, targetYear, debtMonths
-    };
+    return null;
   }, [selectedRoomForInvoice, prices, lodge, selectedMonth, selectedYear, allBills]);
 
   const markBillAsSent = async (roomItem, totalAmount) => {
@@ -737,7 +767,7 @@ const DebtScreen = () => {
       {/* Month Dropdown overlay */}
       {showMonthPicker && (
         <View style={styles.dropdownMenu}>
-          {getMonthChoices().map((choice, index) => (
+          {getMonthChoices(lodge?.billingDate || 25, lodge?.earlyRecordDays !== undefined ? lodge.earlyRecordDays : 3).map((choice, index) => (
             <TouchableOpacity
               key={index}
               style={[
@@ -803,6 +833,21 @@ const DebtScreen = () => {
           <TouchableOpacity 
             style={[
               styles.tabBtn, 
+              activeTab === 'debt' && { backgroundColor: '#fef3c7', borderColor: '#d97706' }
+            ]}
+            onPress={() => setActiveTab('debt')}
+          >
+            <Text style={[
+              styles.tabBtnText, 
+              activeTab === 'debt' && { color: '#b45309' }
+            ]}>
+              Thu thiếu ({debt.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[
+              styles.tabBtn, 
               activeTab === 'paid' && { backgroundColor: '#dcfce7', borderColor: '#16a34a' }
             ]}
             onPress={() => setActiveTab('paid')}
@@ -812,21 +857,6 @@ const DebtScreen = () => {
               activeTab === 'paid' && { color: '#15803d' }
             ]}>
               Đã thu đủ ({paid.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[
-              styles.tabBtn, 
-              activeTab === 'debt' && { backgroundColor: '#fef3c7', borderColor: '#d97706' }
-            ]}
-            onPress={() => setActiveTab('debt')}
-          >
-            <Text style={[
-              styles.tabBtnText, 
-              activeTab === 'debt' && { color: '#b45309' }
-            ]}>
-              Nợ (Đóng thiếu) ({debt.length})
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -877,7 +907,12 @@ const DebtScreen = () => {
               <Text style={styles.emptyTxt}>Tuyệt vời! Tất cả phòng đã đóng tiền.</Text>
             ) : (
               unpaid.map(item => (
-                <View key={item.id} style={styles.premiumCardVertical}>
+                <TouchableOpacity 
+                  key={item.id} 
+                  style={styles.premiumCardVertical}
+                  activeOpacity={0.9}
+                  onPress={() => router.push({ pathname: '/bill', params: { id: item.id || item._id, billId: item.currentBillId || item.billId } })}
+                >
                   <View style={styles.cardHeaderRow}>
                     <View style={styles.cardInfoRow}>
                       <View style={[styles.avatarCircle, { backgroundColor: '#ffe4e6' }]}>
@@ -916,7 +951,8 @@ const DebtScreen = () => {
                   <View style={styles.cardButtonsRow}>
                     <TouchableOpacity 
                       style={styles.actionBtnOutlinePremium}
-                      onPress={() => {
+                      onPress={(e) => {
+                        e.stopPropagation();
                         setSelectedRoomForInvoice(item);
                         setIsInvoiceModalVisible(true);
                       }}
@@ -927,13 +963,16 @@ const DebtScreen = () => {
                     
                     <TouchableOpacity 
                       style={styles.actionBtnPrimaryPremium}
-                      onPress={() => handleOpenCollectModal(item)}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleOpenCollectModal(item);
+                      }}
                     >
                       <MoneyIcon size={16} color="#fff" style={{ marginRight: 6 }} />
                       <Text style={styles.actionBtnPrimaryText}>Thu tiền</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))
             )}
           </View>
@@ -945,7 +984,12 @@ const DebtScreen = () => {
               <Text style={styles.emptyTxt}>Chưa có phòng nào hoàn tất đóng tiền.</Text>
             ) : (
               paid.map(item => (
-                <View key={item.id} style={styles.premiumCard}>
+                <TouchableOpacity 
+                  key={item.id} 
+                  style={styles.premiumCard}
+                  activeOpacity={0.8}
+                  onPress={() => router.push({ pathname: '/bill', params: { id: item.id || item._id, billId: item.billId } })}
+                >
                   <View style={styles.cardInfoRow}>
                     <View style={[styles.avatarCircle, { backgroundColor: '#dcfce7' }]}>
                       <Text style={[styles.avatarText, { color: '#15803d' }]}>
@@ -967,7 +1011,7 @@ const DebtScreen = () => {
                     <CheckIcon size={14} color="#16a34a" />
                     <Text style={styles.paidStatusText}>Đã thu đủ</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))
             )}
           </View>
@@ -976,30 +1020,77 @@ const DebtScreen = () => {
         {activeTab === 'debt' && (
           <View style={styles.list}>
             {debt.length === 0 ? (
-              <Text style={styles.emptyTxt}>Không có phòng nào nợ đóng thiếu.</Text>
+              <Text style={styles.emptyTxt}>Không có phòng nào thu thiếu.</Text>
             ) : (
-              debt.map(item => (
-                <View key={item.id} style={styles.premiumCard}>
-                  <View style={styles.cardInfoRow}>
-                    <View style={[styles.avatarCircle, { backgroundColor: '#fef3c7' }]}>
-                      <Text style={[styles.avatarText, { color: '#b45309' }]}>
-                        {item.name ? item.name.charAt(0) : 'P'}
-                      </Text>
-                    </View>
-                    <View style={styles.cardInfo}>
-                      <Text style={styles.roomName}>{item.name}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                        <UserIcon size={12} color="#64748b" />
-                        <Text style={styles.tenantName}>{item.tenant || 'Khách thuê'}</Text>
-                      </View>
-                      <Text style={styles.amountOrange}>
-                        Nợ cũ: {Number(item.displayAmount).toLocaleString('vi')} đ
-                      </Text>
-                      <Text style={styles.cardMeta}>Cộng dồn tự động vào tháng sau</Text>
-                    </View>
-                  </View>
+              <>
+                <View style={[styles.modalValueCard, { backgroundColor: '#fffbeb', borderColor: '#fef3c7', marginBottom: 12 }]}>
+                  <Text style={[styles.modalValueLabel, { color: '#b45309' }]}>TỔNG SỐ TIỀN CÒN THIẾU CÁC KỲ</Text>
+                  <Text style={[styles.modalValueAmount, { color: '#b45309' }]}>
+                    {debt.reduce((sum, item) => sum + (Number(item.displayAmount) || 0), 0).toLocaleString('vi')} đ
+                  </Text>
                 </View>
-              ))
+                {debt.map(item => (
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={styles.premiumCardVertical}
+                    activeOpacity={0.9}
+                    onPress={() => router.push({ pathname: '/bill', params: { id: item.id || item._id, billId: item.currentBillId || item.billId } })}
+                  >
+                    <View style={styles.cardHeaderRow}>
+                      <View style={styles.cardInfoRow}>
+                        <View style={[styles.avatarCircle, { backgroundColor: '#fef3c7' }]}>
+                          <Text style={[styles.avatarText, { color: '#b45309' }]}>
+                            {item.name ? item.name.charAt(0) : 'P'}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text style={styles.roomName}>{item.name}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                            <UserIcon size={12} color="#64748b" />
+                            <Text style={styles.tenantName}>{item.tenant || 'Khách thuê'}</Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={[styles.badgeRose, { backgroundColor: '#fef3c7' }]}>
+                        <Text style={[styles.badgeRoseText, { color: '#b45309' }]}>Thu thiếu</Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.amountDivider} />
+                    
+                    <View style={styles.amountRow}>
+                      <Text style={styles.amountLabel}>Số còn thiếu:</Text>
+                      <Text style={[styles.amountRed, { color: '#b45309' }]}>
+                        {Number(item.displayAmount).toLocaleString('vi')} đ
+                      </Text>
+                    </View>
+
+                    <View style={styles.cardButtonsRow}>
+                      <TouchableOpacity 
+                        style={styles.actionBtnOutlinePremium}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          router.push({ pathname: '/bill', params: { id: item.id || item._id, billId: item.currentBillId || item.billId } });
+                        }}
+                      >
+                        <ReceiptIcon size={16} color="#16a34a" style={{ marginRight: 6 }} />
+                        <Text style={styles.actionBtnOutlineText}>Xem chi tiết</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity 
+                        style={styles.actionBtnPrimaryPremium}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleOpenCollectModal(item);
+                        }}
+                      >
+                        <MoneyIcon size={16} color="#fff" style={{ marginRight: 6 }} />
+                        <Text style={styles.actionBtnPrimaryText}>Thu nợ</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </>
             )}
           </View>
         )}

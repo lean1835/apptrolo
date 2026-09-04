@@ -1,8 +1,11 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APP_CONFIG, STORAGE_KEYS } from '../constants';
-// Fallback mặc định duy nhất luôn là link Production trực tuyến
+// Ưu tiên API URL cấu hình trong .env (chạy local/staging), fallback là production URL
 const getBaseUrl = (): string => {
+  if (APP_CONFIG.API_URL) {
+    return APP_CONFIG.API_URL;
+  }
   return 'https://nhatrovuive-gplu.onrender.com/api';
 };
 
@@ -13,6 +16,12 @@ console.log('Resolved fallback mobile API URL:', API_URL);
  * Tải cấu hình mới nhất từ CDN và lưu vào AsyncStorage để sử dụng cho lần khởi động tiếp theo hoặc các request sau đó.
  */
 export const fetchAndSaveDynamicApiUrl = async (): Promise<string | null> => {
+  // Nếu có EXPO_PUBLIC_API_URL được set trong .env (chạy local), giữ nguyên và không bị ghi đè bởi CDN
+  if (APP_CONFIG.API_URL) {
+    console.log('DEBUG: Local EXPO_PUBLIC_API_URL is active, skipping dynamic CDN config:', APP_CONFIG.API_URL);
+    return APP_CONFIG.API_URL;
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 3000); // Giới hạn 3 giây để tránh đứng app khi mất mạng
 
@@ -55,12 +64,16 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      const savedApiUrl = await AsyncStorage.getItem(STORAGE_KEYS.DYNAMIC_API_URL);
-      console.log('DEBUG: Request Interceptor - savedApiUrl in AsyncStorage:', savedApiUrl);
-      if (savedApiUrl) {
-        config.baseURL = savedApiUrl;
+      if (APP_CONFIG.API_URL) {
+        config.baseURL = APP_CONFIG.API_URL;
       } else {
-        config.baseURL = API_URL;
+        const savedApiUrl = await AsyncStorage.getItem(STORAGE_KEYS.DYNAMIC_API_URL);
+        console.log('DEBUG: Request Interceptor - savedApiUrl in AsyncStorage:', savedApiUrl);
+        if (savedApiUrl) {
+          config.baseURL = savedApiUrl;
+        } else {
+          config.baseURL = API_URL;
+        }
       }
     } catch (e) {
       console.error('DEBUG: Interceptor error:', e);

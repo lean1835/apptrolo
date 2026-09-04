@@ -5,7 +5,8 @@ import ActivityModel from './activity.model';
 export const getRecent = catchAsync(async (req: Request, res: Response) => {
   const acts = await ActivityModel.find({ user: req.users._id })
     .sort({ time: -1 })
-    .limit(10);
+    .limit(10)
+    .lean();
 
   res.status(200).json({
     success: true,

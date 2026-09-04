@@ -233,19 +233,19 @@ const HomeScreen = ({ navigation }) => {
       const now = new Date();
       const thisMonth = now.getMonth();
       const thisYear = now.getFullYear();
+      const thisMonthLabel = thisMonth + 1;
       
       const collectedThisMonth = bills
         .filter(b => {
-          if (!b.collected) return false;
+          if (!b.collected && (b.amountPaid || 0) < b.total) return false;
           const parts = (b.date || '').split('-');
           if (parts.length < 2) return false;
           return parseInt(parts[0], 10) === thisYear && (parseInt(parts[1], 10) - 1) === thisMonth;
         })
-        .reduce((sum, b) => sum + (Number(b.total) || 0), 0);
+        .reduce((sum, b) => sum + (Number(b.amountPaid || b.total) || 0), 0);
 
       const pendingBills = bills.filter(b => {
-        if (b.collected) return false;
-        // Only count bills for the current month
+        if (b.collected || (b.amountPaid || 0) >= b.total) return false;
         const parts = (b.date || '').split('-');
         if (parts.length < 2) return false;
         if (parseInt(parts[0], 10) !== thisYear || (parseInt(parts[1], 10) - 1) !== thisMonth) return false;
@@ -258,84 +258,25 @@ const HomeScreen = ({ navigation }) => {
       });
       
       const pendingBillsCount = pendingBills.length;
+      const unsentBillsCount = pendingBills.filter(b => !b.sent).length;
       
       let unpaidSum = 0;
       pendingBills.forEach(b => {
-        const r = rooms.find(room => room.id === b.roomId || room.id === b.room);
-        if (!r) return;
-        
-        // Find unpaid bills up to the current month/year
-        const roomBills = bills.filter(bill => bill.roomId === r.id || bill.room === r.id);
-        const unpaidBillsUpToSelected = roomBills.filter(bill => {
-          if (bill.collected) return false;
-          const parts = bill.date.split('-');
-          if (parts.length !== 3) return false;
-          const by = parseInt(parts[0], 10);
-          const bm = parseInt(parts[1], 10);
-          return by < thisYear || (by === thisYear && bm <= (thisMonth + 1));
-        });
-
-        // Determine debtMonths (number of unpaid months starting from checkin up to current billing month)
-        let debtMonths = 1;
-        if (r.checkin) {
-          const checkinDate = parseDate(r.checkin);
-          if (!isNaN(checkinDate.getTime())) {
-            const checkinYear = checkinDate.getFullYear();
-            const checkinMonth = checkinDate.getMonth() + 1;
-            debtMonths = Math.max(1, (thisYear - checkinYear) * 12 + ((thisMonth + 1) - checkinMonth));
-          }
-        }
-
-        // Find prior readings (before the earliest unpaid bill month)
-        const checkinDateStr = r.checkin || '';
-        const filteredReadings = (r.meterReadings || []).filter(mr => !checkinDateStr || mr.date >= checkinDateStr);
-        const allSorted = [...filteredReadings].sort((a, b) => a.date.localeCompare(b.date));
-
-        let earliestUnpaidDate = null;
-        if (unpaidBillsUpToSelected.length > 0) {
-          const sortedUnpaid = [...unpaidBillsUpToSelected].sort((a, b) => a.date.localeCompare(b.date));
-          earliestUnpaidDate = sortedUnpaid[0].date;
-        }
-
-        let priorReading = null;
-        if (earliestUnpaidDate) {
-          const earliestParts = earliestUnpaidDate.split('-');
-          const earliestY = parseInt(earliestParts[0], 10);
-          const earliestM = parseInt(earliestParts[1], 10);
-          priorReading = [...allSorted]
-            .reverse()
-            .find(mr => {
-              const parts = mr.date.split('-');
-              const ry = parseInt(parts[0], 10);
-              const rm = parseInt(parts[1], 10);
-              return ry < earliestY || (ry === earliestY && rm < earliestM);
-            });
-        }
-
-        const pElecValue = priorReading ? priorReading.elec : (r.ep || 0);
-        const pWaterValue = priorReading ? priorReading.water : (r.wp || 0);
-
-        const thisMonthReadings = allSorted.find(mr => {
-          const [y, m] = mr.date.split('-');
-          return parseInt(y, 10) === thisYear && parseInt(m, 10) === (thisMonth + 1);
-        });
-
-        const latestReading = thisMonthReadings || (allSorted.length > 0 ? allSorted[allSorted.length - 1] : null);
-        const cElec = latestReading ? latestReading.elec : pElecValue;
-        const cWater = latestReading ? latestReading.water : pWaterValue;
-
-        const eUse = Math.max(0, cElec - pElecValue);
-        const wUse = Math.max(0, cWater - pWaterValue);
-
-        const eAmt = eUse * (prices.elec || 0);
-        const rent = (parseFloat(r.price) || 0) * debtMonths;
-        const fees = ((prices.wifi || 0) + (prices.garbage || 0)) * debtMonths;
-        const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) * debtMonths : (wUse * (prices.water || 0));
-        const prepaid = r.contractPrepaid > 0 ? rent : 0;
-
-        const calculatedTotal = rent + eAmt + wAmt + fees - prepaid;
-        unpaidSum += calculatedTotal;
+        const remaining = Math.max(0, b.total - (b.amountPaid || 0));
+        unpaidSum += remaining;
       });
+
+      // Overdue debts from past months (F5 / F8.B.d4)
+      const overdueBills = bills.filter(b => {
+        if (b.collected || (b.amountPaid || 0) >= b.total) return false;
+        const parts = (b.date || '').split('-');
+        if (parts.length < 2) return false;
+        const by = parseInt(parts[0], 10);
+        const bm = parseInt(parts[1], 10) - 1;
+        return by < thisYear || (by === thisYear && bm < thisMonth);
+      });
+      const overdueDebtSum = overdueBills.reduce((sum, b) => sum + Math.max(0, b.total - (b.amountPaid || 0)), 0);
+      const debtRoomsCount = rooms.filter(r => r.status === 'debt' || r.status === 'Debt' || (r.debtAmount || 0) > 0).length || overdueBills.length;
       
       const roomsWithBill = new Set();
       bills.forEach(b => {
@@ -346,12 +287,10 @@ const HomeScreen = ({ navigation }) => {
         }
       });
 
-
-
       const isMeterReadingDue = (room) => {
-        if (!room.checkin) return false;
+        if (!room.checkin) return true;
         const checkinDate = parseDate(room.checkin);
-        if (isNaN(checkinDate.getTime())) return false;
+        if (isNaN(checkinDate.getTime())) return true;
         
         let latestDate = new Date(checkinDate);
         if (room.meterReadings && room.meterReadings.length > 0) {
@@ -401,7 +340,6 @@ const HomeScreen = ({ navigation }) => {
       }));
 
       const generatedNotifications = [];
-      const thisMonthLabel = thisMonth + 1;
 
       // 1. Meter reading warnings
       rooms.forEach(room => {
@@ -418,15 +356,15 @@ const HomeScreen = ({ navigation }) => {
           const notiId = `meter_${room.id}_${thisYear}_${thisMonth}`;
           generatedNotifications.push({
             id: `meter_${room.id}`,
-            title: `Đến hạn ghi điện nước`,
-            desc: `Phòng ${room.name} chưa ghi chỉ số điện nước Tháng ${thisMonthLabel}.`,
+            title: `Đến ngày ghi điện nước`,
+            desc: `Phòng ${room.name} cần ghi số điện nước kỳ Tháng ${thisMonthLabel}.`,
             type: 'meter',
             roomId: room.id
           });
           
           triggerLocalNotification(
-            `Đến hạn ghi điện nước`,
-            `Phòng ${room.name} chưa ghi chỉ số điện nước Tháng ${thisMonthLabel}.`,
+            `Đến ngày ghi điện nước`,
+            `Phòng ${room.name} cần ghi số điện nước kỳ Tháng ${thisMonthLabel}.`,
             notiId
           );
         }
@@ -439,14 +377,14 @@ const HomeScreen = ({ navigation }) => {
           const notiId = `bill_${bill.id || bill._id}`;
           generatedNotifications.push({
             id: `bill_${bill.id || bill._id}`,
-            title: `Đến hạn thu tiền`,
+            title: `Hóa đơn chờ thu tiền`,
             desc: `Phòng ${room.name} có hóa đơn chờ thu: ${Number(bill.total).toLocaleString('vi')} đ.`,
             type: 'bill',
             roomId: room.id
           });
 
           triggerLocalNotification(
-            `Đến hạn thu tiền`,
+            `Hóa đơn chờ thu tiền`,
             `Phòng ${room.name} có hóa đơn chờ thu: ${Number(bill.total).toLocaleString('vi')} đ.`,
             notiId
           );
@@ -459,6 +397,9 @@ const HomeScreen = ({ navigation }) => {
         revenue: collectedThisMonth,
         unpaidSum: unpaidSum,
         pendingBills: pendingBillsCount,
+        unsentBillsCount,
+        overdueDebtSum,
+        debtRoomsCount,
         roomsNeedMeter: roomsNeedMeter,
         roomsNeedBill: roomsNeedBill,
         activities: realActivities,
@@ -580,11 +521,12 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Todo tasks card */}
+        {/* Todo tasks card (F8.B) */}
         <View style={styles.todoCard}>
           <Text style={styles.todoTitle}>VIỆC CẦN LÀM THÁNG NÀY</Text>
           <Text style={styles.todoSub}>{`Hóa đơn Tháng ${new Date().getMonth() + 1}/${new Date().getFullYear()}`}</Text>
           <View style={styles.todoList}>
+            {/* d.1. Chốt số và lập hóa đơn */}
             <TouchableOpacity 
               style={styles.todoItem} 
               onPress={() => router.navigate({ pathname: '/debt', params: { filter: 'unsent' } })}
@@ -594,13 +536,14 @@ const HomeScreen = ({ navigation }) => {
               </View>
               <View style={styles.todoItemContent}>
                 <Text style={styles.todoItemTitle}>Chốt số & Lập bill</Text>
-                <Text style={styles.todoItemSub}>
-                  {data.roomsNeedMeter === 0 ? "Tất cả đã ghi ✓" : `Còn ${data.roomsNeedMeter} phòng cần chốt`}
+                <Text style={[styles.todoItemSub, data.roomsNeedMeter > 0 && { color: COLORS.rose, fontWeight: '700' }]}>
+                  {data.roomsNeedMeter === 0 ? "Tất cả đã ghi ✓" : `Còn ${data.roomsNeedMeter} phòng chưa chốt`}
                 </Text>
               </View>
               <ChevronIcon size={16} color={COLORS.g4} />
             </TouchableOpacity>
 
+            {/* d.2. Gửi hóa đơn */}
             <TouchableOpacity 
               style={styles.todoItem} 
               onPress={() => router.navigate({ pathname: '/debt', params: { filter: 'sent' } })}
@@ -610,13 +553,14 @@ const HomeScreen = ({ navigation }) => {
               </View>
               <View style={styles.todoItemContent}>
                 <Text style={styles.todoItemTitle}>Gửi hóa đơn</Text>
-                <Text style={styles.todoItemSub}>
-                  {data.roomsNeedBill === 0 ? "Đã gửi hết ✓" : `Còn ${data.roomsNeedBill} phòng chưa gửi`}
+                <Text style={[styles.todoItemSub, (data.unsentBillsCount || 0) > 0 && { color: COLORS.sky, fontWeight: '700' }]}>
+                  {(data.unsentBillsCount || 0) === 0 ? "Đã gửi hết ✓" : `Còn ${data.unsentBillsCount} hóa đơn chưa gửi`}
                 </Text>
               </View>
               <ChevronIcon size={16} color={COLORS.g4} />
             </TouchableOpacity>
 
+            {/* d.3. Thu tiền phòng */}
             <TouchableOpacity 
               style={styles.todoItem} 
               onPress={() => router.navigate({ pathname: '/debt', params: { filter: 'sent' } })}
@@ -626,8 +570,25 @@ const HomeScreen = ({ navigation }) => {
               </View>
               <View style={styles.todoItemContent}>
                 <Text style={styles.todoItemTitle}>Thu tiền phòng</Text>
-                <Text style={styles.todoItemSub}>
-                  {data.pendingBills === 0 ? "Đã thu hết ✓" : `Còn ${data.pendingBills} hóa đơn chờ thu`}
+                <Text style={[styles.todoItemSub, data.pendingBills > 0 && { color: COLORS.amber, fontWeight: '700' }]}>
+                  {data.pendingBills === 0 ? "Đã thu hết ✓" : `Còn ${formatCurrency(data.unpaidSum)} cần thu`}
+                </Text>
+              </View>
+              <ChevronIcon size={16} color={COLORS.g4} />
+            </TouchableOpacity>
+
+            {/* d.4. Kiểm tra nợ */}
+            <TouchableOpacity 
+              style={styles.todoItem} 
+              onPress={() => router.navigate({ pathname: '/debt', params: { filter: 'debt' } })}
+            >
+              <View style={[styles.todoIconContainer, { backgroundColor: 'rgba(225, 29, 72, 0.1)' }]}>
+                <DoorIcon size={20} color={COLORS.rose} />
+              </View>
+              <View style={styles.todoItemContent}>
+                <Text style={styles.todoItemTitle}>Kiểm tra nợ</Text>
+                <Text style={[styles.todoItemSub, (data.overdueDebtSum || 0) > 0 && { color: COLORS.rose, fontWeight: '700' }]}>
+                  {(data.overdueDebtSum || 0) === 0 ? "Không có nợ quá hạn ✓" : `Có ${formatCurrency(data.overdueDebtSum)} nợ quá hạn`}
                 </Text>
               </View>
               <ChevronIcon size={16} color={COLORS.g4} />

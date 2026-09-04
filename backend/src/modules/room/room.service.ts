@@ -3,6 +3,7 @@ import MemberModel from './member.model';
 import MeterReadingModel from './meterReading.model';
 import BillModel from './bill.model';
 import TenantModel from './tenant.model';
+import LodgeModel from '../lodge/lodge.model';
 import UtilityPriceModel from '../utilityPrice/utilityPrice.model';
 import { ActivityService } from '@modules/activity/activity.service';
 import { ApiError } from '@common/utils/ApiError';
@@ -13,6 +14,7 @@ import { IBill } from '@common/interfaces/bill.interface';
 import mongoose from 'mongoose';
 import ActivityModel from '@modules/activity/activity.model';
 import { IActivity } from '@common/interfaces/activity.interface';
+import { getMonthLabel, getUnpaidAmount, getPaymentLockState } from '@common/utils/derivedFields';
 
 const activityService = new ActivityService();
 
@@ -28,24 +30,60 @@ export interface IRoomHistoryItem {
 
 export class RoomService {
   public async getRoomsByLodge(lodgeId: string): Promise<any[]> {
-    const rooms = await RoomModel.find({ lodge: lodgeId })
-      .populate({
-        path: 'meterReadings',
-        options: { sort: { date: -1 }, limit: 6 }
-      })
-      .populate('tenant')
-      .lean();
+    const rooms = await RoomModel.find({ lodge: lodgeId }).lean();
+    if (!rooms || rooms.length === 0) return [];
 
-    return rooms.map(room => {
+    const roomIds = rooms.map((r: any) => r._id);
+    const tenantIds = rooms.map((r: any) => r.tenant).filter(Boolean);
+
+    // Chạy 2 truy vấn theo lô song song thay vì N+1 queries tuần tự
+    const [allReadings, tenants] = await Promise.all([
+      MeterReadingModel.find({ room: { $in: roomIds } })
+        .sort({ date: -1 })
+        .lean(),
+      tenantIds.length > 0 ? TenantModel.find({ _id: { $in: tenantIds } }).lean() : Promise.resolve([]),
+    ]);
+
+    // Gom tối đa 6 chỉ số gần nhất theo từng phòng
+    const readingsByRoom = new Map<string, any[]>();
+    for (const reading of allReadings) {
+      const rId = reading.room.toString();
+      const list = readingsByRoom.get(rId) || [];
+      if (list.length < 6) {
+        list.push(reading);
+        readingsByRoom.set(rId, list);
+      }
+    }
+
+    const tenantMap = new Map<string, any>();
+    for (const t of tenants) {
+      tenantMap.set(t._id.toString(), t);
+    }
+
+    return rooms.map((room: any) => {
+      const rId = room._id.toString();
+      const roomReadings = readingsByRoom.get(rId) || [];
+      const tenantDoc = room.tenant ? tenantMap.get(room.tenant.toString()) : null;
+
       const ret = {
         ...room,
-        id: room._id.toString(),
+        id: rId,
+        ep: room.initialElec !== undefined ? room.initialElec : 0,
+        wp: room.initialWater !== undefined ? room.initialWater : 0,
+        meterReadings: roomReadings,
       } as any;
       
-      if (ret.tenant && typeof ret.tenant === 'object') {
-        ret.phone = (ret.tenant as any).phone || '';
-        ret.tenantId = (ret.tenant as any)._id;
-        ret.tenant = (ret.tenant as any).name || '';
+      if (tenantDoc) {
+        ret.phone = tenantDoc.phone || '';
+        ret.tenantId = tenantDoc._id;
+        ret.checkin = tenantDoc.checkin || '';
+        ret.contract = tenantDoc.contract || 'monthly';
+        ret.contractMonths = tenantDoc.contractMonths || 1;
+        ret.contractPrepaid = tenantDoc.prepaidUntil || 0;
+        ret.prepaidUntil = tenantDoc.prepaidUntil || 0;
+        ret.handoverElec = tenantDoc.handoverElec || 0;
+        ret.handoverWater = tenantDoc.handoverWater || 0;
+        ret.tenant = tenantDoc.name || '';
       } else if (ret.tenant) {
         ret.tenantId = ret.tenant;
         ret.tenant = '';
@@ -59,7 +97,7 @@ export class RoomService {
     });
   }
 
-  public async getRoomById(roomId: string): Promise<IRoom> {
+  public async getRoomById(roomId: string, lodgeId?: string): Promise<IRoom> {
     const room = await RoomModel.findById(roomId)
       .populate('members')
       .populate('meterReadings')
@@ -68,25 +106,26 @@ export class RoomService {
     if (!room) {
       throw new ApiError(404, 'Không tìm thấy phòng trọ');
     }
+    if (lodgeId && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền truy cập phòng trọ này');
+    }
     return room;
   }
 
   public async saveRoom(lodgeId: string, payload: any): Promise<IRoom> {
     const isNew = !payload._id && !payload.id;
+    const initialElec = payload.initialElec !== undefined ? payload.initialElec : (payload.ep || 0);
+    const initialWater = payload.initialWater !== undefined ? payload.initialWater : (payload.wp || 0);
     
     let room;
     if (isNew) {
       room = new RoomModel({
         name: payload.name,
         price: payload.price,
-        status: payload.status,
+        status: payload.status || 'empty',
         descText: payload.descText || '',
-        people: payload.people || 0,
-        checkin: payload.checkin || '',
-        contract: payload.contract || 'monthly',
-        contractPrepaid: payload.contractPrepaid || 0,
-        ep: payload.ep || 0,
-        wp: payload.wp || 0,
+        initialElec,
+        initialWater,
         lodge: lodgeId,
         ...(payload.createdAt && { createdAt: new Date(payload.createdAt) }),
       });
@@ -124,13 +163,13 @@ export class RoomService {
           await activityService.logActivityByLodge(
             lodgeId,
             `${room.name} · Khách cũ: ${oldTenantName}`,
-            'member'
+            'tenant_old'
           );
         }
         await activityService.logActivityByLodge(
           lodgeId,
           `${room.name} · Khách mới: ${newTenantName}`,
-          'member'
+          'tenant_new'
         );
       }
 
@@ -139,17 +178,15 @@ export class RoomService {
       if (payload.price !== undefined) room.price = payload.price;
       if (payload.status !== undefined) room.status = payload.status;
       if (payload.descText !== undefined) room.descText = payload.descText;
-      if (payload.people !== undefined) room.people = payload.people;
-      if (payload.checkin !== undefined) room.checkin = payload.checkin;
-      if (payload.contract !== undefined) room.contract = payload.contract;
-      if (payload.contractPrepaid !== undefined) room.contractPrepaid = payload.contractPrepaid;
-      if (payload.ep !== undefined) room.ep = payload.ep;
-      if (payload.wp !== undefined) room.wp = payload.wp;
+      if (payload.initialElec !== undefined) room.initialElec = payload.initialElec;
+      else if (payload.ep !== undefined) room.initialElec = payload.ep;
+      if (payload.initialWater !== undefined) room.initialWater = payload.initialWater;
+      else if (payload.wp !== undefined) room.initialWater = payload.wp;
 
       await room.save();
     }
 
-    // Synchronize separate Tenants collection conditionally
+    // Synchronize separate Tenants collection
     if (payload.tenant !== undefined) {
       if (payload.tenant) {
         let tenantObj = await TenantModel.findOne({ room: room._id });
@@ -157,7 +194,15 @@ export class RoomService {
           tenantObj = new TenantModel({ room: room._id });
         }
         tenantObj.name = payload.tenant;
-        tenantObj.phone = payload.phone !== undefined ? payload.phone : (tenantObj.phone || '');
+        if (payload.phone !== undefined) tenantObj.phone = payload.phone;
+        if (payload.checkin !== undefined) tenantObj.checkin = payload.checkin;
+        if (payload.contract !== undefined) tenantObj.contract = payload.contract;
+        if (payload.contractMonths !== undefined) tenantObj.contractMonths = payload.contractMonths;
+        if (payload.prepaidUntil !== undefined) tenantObj.prepaidUntil = payload.prepaidUntil;
+        else if (payload.contractPrepaid !== undefined) tenantObj.prepaidUntil = payload.contractPrepaid;
+        if (payload.handoverElec !== undefined) tenantObj.handoverElec = payload.handoverElec;
+        if (payload.handoverWater !== undefined) tenantObj.handoverWater = payload.handoverWater;
+        
         await tenantObj.save();
 
         room.tenant = tenantObj._id;
@@ -172,58 +217,73 @@ export class RoomService {
     return await this.getRoomById(room._id.toString());
   }
 
-  public async deleteRoom(roomId: string): Promise<void> {
+  public async deleteRoom(roomId: string, lodgeId?: string): Promise<void> {
     const room = await RoomModel.findById(roomId);
     if (!room) {
       throw new ApiError(404, 'Không tìm thấy phòng trọ');
     }
 
-    const lodgeId = room.lodge.toString();
+    if (lodgeId && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền thao tác trên phòng trọ này');
+    }
+
+    // Business Rule F2.A: Chỉ xóa phòng khi phòng chưa từng có khách / hóa đơn
+    const billsCount = await BillModel.countDocuments({ room: roomId });
+    const readingsCount = await MeterReadingModel.countDocuments({ room: roomId });
+    const tenantsCount = await TenantModel.countDocuments({ room: roomId });
+
+    if (room.status === 'occupied' || billsCount > 0 || readingsCount > 0 || tenantsCount > 0) {
+      throw new ApiError(400, 'Không thể xóa phòng đã từng có khách hoặc có lịch sử hóa đơn/điện nước.');
+    }
+
+    const lodgeIdStr = room.lodge.toString();
     const roomName = room.name;
 
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
-        // Delete all related records
         await MemberModel.deleteMany({ room: roomId }).session(session);
         await MeterReadingModel.deleteMany({ room: roomId }).session(session);
         await BillModel.deleteMany({ room: roomId }).session(session);
         await TenantModel.deleteMany({ room: roomId }).session(session);
         await RoomModel.findByIdAndDelete(roomId).session(session);
         
-        await activityService.logActivityByLodge(lodgeId, `Xóa phòng: ${roomName}`, 'room');
+        await activityService.logActivityByLodge(lodgeIdStr, `Xóa phòng: ${roomName}`, 'room');
       });
     } finally {
       session.endSession();
     }
   }
 
-  public async addMember(roomId: string, payload: any): Promise<IMember> {
+  public async addMember(roomId: string, payload: any, lodgeId?: string): Promise<IMember> {
     const room = await RoomModel.findById(roomId);
     if (!room) {
       throw new ApiError(404, 'Không tìm thấy phòng trọ');
     }
 
+    if (lodgeId && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền thao tác trên phòng trọ này');
+    }
+
+    const tenant = await TenantModel.findOne({ room: roomId, status: 'active' });
+
     const member = new MemberModel({
       name: payload.name,
       phone: payload.phone || '',
+      relation: payload.relation || 'Bạn',
       note: payload.note || '',
       room: roomId,
+      tenant: tenant ? tenant._id : undefined,
     });
 
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
         await member.save({ session });
-        
-        // Auto-increment people count
-        const currentPeople = room.people || 1;
-        room.people = currentPeople + 1;
-        await room.save({ session });
 
         await activityService.logActivityByLodge(
           room.lodge.toString(),
-          `${room.name} · Thêm thành viên: ${member.name}`,
+          `${room.name} · Thêm thành viên: ${member.name} (${member.relation || 'Người ở cùng'})`,
           'member'
         );
       });
@@ -234,23 +294,28 @@ export class RoomService {
     return member;
   }
 
-  public async removeMember(memberId: string): Promise<void> {
+  public async removeMember(memberId: string, lodgeId?: string): Promise<void> {
     const member = await MemberModel.findById(memberId);
     if (!member) {
       throw new ApiError(404, 'Không tìm thấy thành viên');
     }
 
     const room = await RoomModel.findById(member.room);
+    if (lodgeId && room && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền thao tác trên thành viên này');
+    }
+
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
         await MemberModel.findByIdAndDelete(memberId).session(session);
 
         if (room) {
-          // Auto-decrement people count, minimum is 1 (the tenant)
-          const currentPeople = room.people || 1;
-          room.people = Math.max(1, currentPeople - 1);
-          await room.save({ session });
+          await activityService.logActivityByLodge(
+            room.lodge.toString(),
+            `${room.name} · Xóa thành viên: ${member.name}`,
+            'member'
+          );
         }
       });
     } finally {
@@ -258,13 +323,20 @@ export class RoomService {
     }
   }
 
-  public async addMeterReading(roomId: string, payload: any): Promise<IMeterReading> {
+  public async addMeterReading(roomId: string, payload: any, lodgeId?: string): Promise<IMeterReading> {
     const room = await RoomModel.findById(roomId);
     if (!room) {
       throw new ApiError(404, 'Không tìm thấy phòng trọ');
     }
 
-    // Check if it's early warning lock
+    if (lodgeId && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền thao tác trên phòng trọ này');
+    }
+
+    const lodge = await LodgeModel.findById(room.lodge);
+    const earlyRecordDays = lodge?.earlyRecordDays !== undefined ? lodge.earlyRecordDays : 3;
+    const billingDateNum = lodge?.billingDate || 25;
+
     const parseDateStr = (dateStr: string): Date => {
       if (!dateStr) return new Date();
       const parts = dateStr.split('-');
@@ -277,32 +349,23 @@ export class RoomService {
       return new Date(dateStr);
     };
 
-    const checkinDateStr = room.checkin || '';
+    const tenant = await TenantModel.findOne({ room: roomId, status: 'active' });
+    const checkinDateStr = tenant?.checkin || (room as any).checkin || '';
     const roomBills = await BillModel.find({ room: roomId });
     const roomReadings = await MeterReadingModel.find({ room: roomId });
 
     const filteredBills = roomBills.filter((b: any) => !checkinDateStr || b.date >= checkinDateStr);
     const filteredReadings = roomReadings.filter((r: any) => !checkinDateStr || r.date >= checkinDateStr);
 
-    const hasUnpaidBills = filteredBills.some((b: any) => !b.collected);
+    const hasUnpaidBills = filteredBills.some((b: any) => !b.collected && (b.amountPaid || 0) < b.total);
     const inDebt = room.status?.toLowerCase() === 'debt' || hasUnpaidBills;
 
     if (!inDebt) {
-      const today = new Date();
-      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const recordDate = payload.date ? parseDateStr(payload.date) : new Date();
+      const recordDateOnly = new Date(recordDate.getFullYear(), recordDate.getMonth(), recordDate.getDate());
 
-      // 1. Check createdAt if in future
-      if ((room as any).createdAt) {
-        const createdDate = new Date((room as any).createdAt);
-        const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-        if (todayOnly < createdDateOnly) {
-          throw new ApiError(400, 'Chưa đến hạn ghi điện nước (Chỉ được ghi trước tối đa 3 ngày so với ngày thu dự kiến)');
-        }
-      }
-
-      // 2. Standard checkin/readings logic
-      if (room.checkin) {
-        const checkinDate = parseDateStr(room.checkin);
+      if (checkinDateStr) {
+        const checkinDate = parseDateStr(checkinDateStr);
         if (!isNaN(checkinDate.getTime())) {
           let latestDate = new Date(checkinDate);
           if (filteredReadings && filteredReadings.length > 0) {
@@ -314,19 +377,34 @@ export class RoomService {
             });
           }
 
-          const expectedDate = new Date(latestDate);
-          expectedDate.setMonth(expectedDate.getMonth() + 1);
-          expectedDate.setDate(checkinDate.getDate());
+          let expectedDate: Date;
+          if (filteredReadings.length === 0) {
+            // Hóa đơn đầu tiên: Kỳ chứa checkinDate
+            if (checkinDate.getDate() < billingDateNum) {
+              expectedDate = new Date(checkinDate.getFullYear(), checkinDate.getMonth(), billingDateNum);
+            } else {
+              expectedDate = new Date(checkinDate.getFullYear(), checkinDate.getMonth() + 1, billingDateNum);
+            }
+
+            // Luật vụn: nếu lúc khách vào, kỳ hiện tại còn <= 3 ngày thì bỏ kỳ vụn, kỳ đầu là kỳ kế tiếp
+            const daysRemainingInCycle = Math.round((expectedDate.getTime() - checkinDate.getTime()) / (1000 * 3600 * 24));
+            if (daysRemainingInCycle <= 3) {
+              expectedDate = new Date(expectedDate.getFullYear(), expectedDate.getMonth() + 1, billingDateNum);
+            }
+          } else {
+            // Các kỳ tiếp theo: 1 tháng sau kỳ liền trước
+            expectedDate = new Date(latestDate.getFullYear(), latestDate.getMonth() + 1, billingDateNum);
+          }
 
           const allowedStart = new Date(expectedDate);
-          allowedStart.setDate(allowedStart.getDate() - 3);
+          allowedStart.setDate(allowedStart.getDate() - earlyRecordDays);
 
           const allowedStartOnly = new Date(allowedStart.getFullYear(), allowedStart.getMonth(), allowedStart.getDate());
 
-          if (todayOnly < allowedStartOnly) {
+          if (recordDateOnly < allowedStartOnly) {
             const expDateStr = `${expectedDate.getDate().toString().padStart(2, '0')}/${(expectedDate.getMonth() + 1).toString().padStart(2, '0')}/${expectedDate.getFullYear()}`;
             const allowedStartStr = `${allowedStart.getDate().toString().padStart(2, '0')}/${(allowedStart.getMonth() + 1).toString().padStart(2, '0')}/${allowedStart.getFullYear()}`;
-            throw new ApiError(400, `Chưa đến hạn ghi điện nước! Phòng này chỉ được ghi từ ngày ${allowedStartStr} (trước 3 ngày so với ngày thu dự kiến ${expDateStr}).`);
+            throw new ApiError(400, `Chưa đến hạn ghi điện nước! Phòng này chỉ được ghi từ ngày ${allowedStartStr} (trước ${earlyRecordDays} ngày so với ngày thu dự kiến ${expDateStr}).`);
           }
         }
       }
@@ -335,12 +413,13 @@ export class RoomService {
     const [yearStr, monthStr] = payload.date.split('-');
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10);
+    const periodStr = `${yearStr}-${monthStr}`;
 
     const session = await mongoose.startSession();
     let reading: any;
     try {
       await session.withTransaction(async () => {
-        // 1. Find existing readings for this room
+        // 1. Tìm hoặc tạo MeterReading
         const readings = await MeterReadingModel.find({ room: roomId }).session(session);
         const existingReading = readings.find(r => {
           const [y, m] = r.date.split('-');
@@ -351,25 +430,29 @@ export class RoomService {
           existingReading.elec = payload.elec;
           existingReading.water = payload.water;
           existingReading.date = payload.date;
+          existingReading.period = periodStr;
+          existingReading.isMeterReplaced = payload.isMeterReplaced || false;
           reading = await existingReading.save({ session });
         } else {
           reading = new MeterReadingModel({
             elec: payload.elec,
             water: payload.water,
             date: payload.date,
+            period: periodStr,
+            isMeterReplaced: payload.isMeterReplaced || false,
             room: roomId,
           });
           await reading.save({ session });
         }
 
-        // 2. Lấy đơn giá điện nước của nhà trọ (Lodge)
+        // 2. Lấy đơn giá điện nước
         const defaultPrices = {
           elec: 3500.0,
           water: 15000.0,
           wifi: 100000.0,
           garbage: 20000.0,
           waterMode: 'meter',
-          waterFixed: 150000.0,
+          waterFixed: 100000.0,
         };
         const prices = (await UtilityPriceModel.findOne({ lodge: room.lodge }).session(session)) || defaultPrices;
 
@@ -384,51 +467,94 @@ export class RoomService {
           })
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        const pElec = priorReadings.length > 0 ? priorReadings[0].elec : (room.ep || 0);
-        const pWater = priorReadings.length > 0 ? priorReadings[0].water : (room.wp || 0);
+        const baseElec = tenant?.handoverElec || room.initialElec || (room as any).ep || 0;
+        const baseWater = tenant?.handoverWater || room.initialWater || (room as any).wp || 0;
 
-        const eUse = Math.max(0, payload.elec - pElec);
-        const wUse = Math.max(0, payload.water - pWater);
+        const pElec = priorReadings.length > 0 ? priorReadings[0].elec : baseElec;
+        const pWater = priorReadings.length > 0 ? priorReadings[0].water : baseWater;
+
+        // F3.B.6: Nếu có cờ THAY ĐỒNG HỒ, sản lượng = số mới (chạy từ 0)
+        const isReplaced = payload.isMeterReplaced === true;
+        const eUse = isReplaced ? Math.max(0, payload.elec) : Math.max(0, payload.elec - pElec);
+        const wUse = isReplaced ? Math.max(0, payload.water) : Math.max(0, payload.water - pWater);
+
+        // Đếm số người ở để tính nước theo đầu người
+        const membersCount = await MemberModel.countDocuments({ room: roomId }).session(session);
+        const totalPeople = (tenant ? 1 : 0) + membersCount;
+
+        const isWaterByPerson = prices.waterMode === 'person' || prices.waterMode === 'fixed';
+        // F3.B.4: Thu nước theo người mà phòng có 0 người ở -> chặn
+        if (isWaterByPerson && totalPeople <= 0) {
+          throw new ApiError(400, 'Phòng hiện không có người ở, không thể tính tiền nước theo đầu người.');
+        }
 
         let billingMonths = 1;
-        if (room.checkin) {
-          const checkinParts = room.checkin.split('-');
-          if (checkinParts.length === 3) {
-            const checkinYear = parseInt(checkinParts[0], 10);
-            const checkinMonth = parseInt(checkinParts[1], 10);
+        const eAmt = eUse * (prices.elec || 0);
+        let wAmt = isWaterByPerson
+          ? (prices.waterFixed || 0) * (totalPeople || 1) * billingMonths
+          : (wUse * (prices.water || 0));
+        
+        let rent = parseFloat((room.price || 0).toString()) * billingMonths;
+        let wifiAmt = (prices.wifi || 0) * billingMonths;
+        let garbageAmt = (prices.garbage || 0) * billingMonths;
+        
+        // F3.D.1: Hóa đơn đầu = kỳ chứa ngày khách vào; tiền phòng, rác, nước-theo-người cắt theo số ngày ở
+        const billsForTenant = await BillModel.find({ room: roomId, tenant: tenant?._id }).session(session);
+        const priorBillsForTenant = billsForTenant.filter(b => {
+          const [y, m] = b.date.split('-');
+          const by = parseInt(y, 10);
+          const bm = parseInt(m, 10);
+          return by < year || (by === year && bm < month);
+        });
+        const isFirstBill = priorBillsForTenant.length === 0;
+
+        if (isFirstBill && checkinDateStr) {
+          const dCheckin = parseDateStr(checkinDateStr);
+          if (!isNaN(dCheckin.getTime())) {
+            const billingD = billingDateNum || 25;
+            const cycleEnd = new Date(year, month - 1, billingD);
+            const cycleStart = new Date(year, month - 2, billingD);
             
-            const totalMonths = Math.max(1, (year - checkinYear) * 12 + (month - checkinMonth));
-            
-            // Find how many bills already exist between checkinMonth and current month (exclusive)
-            const existingBills = await BillModel.find({ room: roomId }).session(session);
-            const billedMonthsCount = existingBills.filter(b => {
-              const bParts = b.date.split('-');
-              if (bParts.length !== 3) return false;
-              const by = parseInt(bParts[0], 10);
-              const bm = parseInt(bParts[1], 10);
+            if (dCheckin > cycleStart && dCheckin < cycleEnd) {
+              const totalCycleDays = Math.max(1, Math.round((cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 3600 * 24)));
+              const daysStayed = Math.max(1, Math.round((cycleEnd.getTime() - dCheckin.getTime()) / (1000 * 3600 * 24)));
               
-              // Bill date is after checkin month and before current month
-              const isAfterCheckin = by > checkinYear || (by === checkinYear && bm > checkinMonth);
-              const isBeforeCurrent = by < year || (by === year && bm < month);
-              return isAfterCheckin && isBeforeCurrent;
-            }).length;
-            
-            billingMonths = Math.max(1, totalMonths - billedMonthsCount);
+              // Luật vụn: nếu lúc khách vào, kỳ hiện tại còn <= 3 ngày thì không cắt vụn mà chờ kỳ sau
+              if (daysStayed > 3) {
+                const ratio = Math.min(1, daysStayed / totalCycleDays);
+                rent = Math.round(rent * ratio);
+                wifiAmt = Math.round(wifiAmt * ratio);
+                garbageAmt = Math.round(garbageAmt * ratio);
+                if (isWaterByPerson) {
+                  wAmt = Math.round(wAmt * ratio);
+                }
+              }
+            }
           }
         }
 
-        const eAmt = eUse * (prices.elec || 0);
-        const wAmt = prices.waterMode === 'fixed' 
-          ? (prices.waterFixed || 0) * billingMonths 
-          : (wUse * (prices.water || 0));
-        const rent = parseFloat((room.price || 0).toString()) * billingMonths;
-        const fees = ((prices.wifi || 0) + (prices.garbage || 0)) * billingMonths;
-        const prepaid = room.contractPrepaid > 0 ? rent : 0;
+        const prepaidCount = tenant?.prepaidUntil || (room as any).contractPrepaid || 0;
+        const isPrepaid = priorBillsForTenant.length < prepaidCount;
+        const prepaidDeduction = isPrepaid ? rent : 0;
         
-        const debtAmt = (room as any).debtAmount || 0;
-        const total = rent + eAmt + wAmt + fees - prepaid + debtAmt;
+        // F5.F & TC-F5-04: Nợ không tràn sang hóa đơn mới
+        const total = rent + eAmt + wAmt + wifiAmt + garbageAmt - prepaidDeduction;
 
-        // 4. Tìm và tự động tạo/cập nhật hóa đơn
+        // 4. Tính kỳ bắt đầu và kết thúc (periodStart -> periodEnd)
+        let periodStart: string;
+        if (isFirstBill && checkinDateStr) {
+          periodStart = checkinDateStr;
+        } else {
+          const billingD = billingDateNum || 25;
+          const prevMonthDate = new Date(year, month - 2, billingD);
+          const pY = prevMonthDate.getFullYear();
+          const pM = (prevMonthDate.getMonth() + 1).toString().padStart(2, '0');
+          const pD = prevMonthDate.getDate().toString().padStart(2, '0');
+          periodStart = `${pY}-${pM}-${pD}`;
+        }
+        const periodEnd = payload.date;
+
+        // 5. Tìm và tự động tạo/cập nhật hóa đơn bất biến
         const bills = await BillModel.find({ room: roomId }).session(session);
         const existingBill = bills.find(b => {
           const [y, m] = b.date.split('-');
@@ -437,26 +563,59 @@ export class RoomService {
 
         if (existingBill) {
           existingBill.total = total;
+          existingBill.rent = rent;
+          existingBill.elecOld = pElec;
+          existingBill.elecNew = payload.elec;
+          existingBill.elecUsage = eUse;
+          existingBill.elecPrice = prices.elec || 0;
+          existingBill.elecAmount = eAmt;
+          existingBill.waterOld = pWater;
+          existingBill.waterNew = payload.water;
+          existingBill.waterUsage = isWaterByPerson ? (totalPeople || 1) : wUse;
+          existingBill.waterPrice = isWaterByPerson ? (prices.waterFixed || 0) : (prices.water || 0);
+          existingBill.waterAmount = wAmt;
+          existingBill.wifiAmount = wifiAmt;
+          existingBill.garbageAmount = garbageAmt;
+          existingBill.prepaidDeduction = prepaidDeduction;
+          existingBill.periodStart = periodStart;
+          existingBill.periodEnd = periodEnd;
+          existingBill.tenant = tenant?._id;
+          existingBill.tenantName = tenant?.name || '';
           await existingBill.save({ session });
         } else {
           const newBill = new BillModel({
-            total: total,
+            room: roomId,
+            tenant: tenant?._id,
+            tenantName: tenant?.name || '',
+            periodStart,
+            periodEnd,
+            date: payload.date,
+            rent,
+            elecOld: pElec,
+            elecNew: payload.elec,
+            elecUsage: eUse,
+            elecPrice: prices.elec || 0,
+            elecAmount: eAmt,
+            waterOld: pWater,
+            waterNew: payload.water,
+            waterUsage: isWaterByPerson ? (totalPeople || 1) : wUse,
+            waterPrice: isWaterByPerson ? (prices.waterFixed || 0) : (prices.water || 0),
+            waterAmount: wAmt,
+            wifiAmount: wifiAmt,
+            garbageAmount: garbageAmt,
+            prepaidDeduction,
+            total,
+            amountPaid: 0,
             sent: false,
             collected: false,
-            date: payload.date,
-            room: roomId,
+            status: 'unpaid',
           });
           await newBill.save({ session });
         }
 
-        if (debtAmt > 0) {
-          (room as any).debtAmount = 0;
-          await room.save({ session });
-        }
-
         await activityService.logActivityByLodge(
           room.lodge.toString(),
-          `${room.name} · Đã ghi điện nước`,
+          `${room.name} · Đã ghi điện nước: ⚡ ${payload.elec} kWh · 💧 ${payload.water} m³`,
           'meter'
         );
       });
@@ -467,18 +626,55 @@ export class RoomService {
     return reading;
   }
 
-  public async createBill(roomId: string, payload: any): Promise<IBill> {
+  public async createBill(roomId: string, payload: any, lodgeId?: string): Promise<IBill> {
     const room = await RoomModel.findById(roomId);
     if (!room) {
       throw new ApiError(404, 'Không tìm thấy phòng trọ');
     }
 
+    if (lodgeId && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền thao tác trên phòng trọ này');
+    }
+
+    const tenant = await TenantModel.findOne({ room: roomId, status: 'active' });
+
+    const total = payload.total !== undefined ? payload.total : 0;
+    const amountPaid = payload.amountPaid !== undefined ? payload.amountPaid : 0;
+    const collected = payload.collected !== undefined ? payload.collected : (amountPaid >= total);
+    const status = getPaymentLockState(total, amountPaid);
+
     const bill = new BillModel({
-      total: payload.total,
-      sent: payload.sent || false,
-      collected: payload.collected || false,
-      date: payload.date,
       room: roomId,
+      tenant: tenant?._id,
+      tenantName: tenant?.name || payload.tenantName || '',
+      periodStart: payload.periodStart || '',
+      periodEnd: payload.periodEnd || '',
+      date: payload.date || new Date().toISOString().split('T')[0],
+      rent: payload.rent || 0,
+      elecOld: payload.elecOld || 0,
+      elecNew: payload.elecNew || 0,
+      elecUsage: payload.elecUsage || 0,
+      elecPrice: payload.elecPrice || 0,
+      elecAmount: payload.elecAmount || 0,
+      waterOld: payload.waterOld || 0,
+      waterNew: payload.waterNew || 0,
+      waterUsage: payload.waterUsage || 0,
+      waterPrice: payload.waterPrice || 0,
+      waterAmount: payload.waterAmount || 0,
+      wifiAmount: payload.wifiAmount || 0,
+      garbageAmount: payload.garbageAmount || 0,
+      otherFee: payload.otherFee || 0,
+      deduction: payload.deduction || 0,
+      prepaidDeduction: payload.prepaidDeduction || 0,
+      hasOldDebt: payload.hasOldDebt || false,
+      oldTenantName: payload.oldTenantName || '',
+      oldDebtAmount: payload.oldDebtAmount || 0,
+      total,
+      amountPaid,
+      sent: payload.sent || false,
+      collected,
+      status,
+      note: payload.note || '',
     });
 
     const session = await mongoose.startSession();
@@ -486,7 +682,6 @@ export class RoomService {
       await session.withTransaction(async () => {
         await bill.save({ session });
 
-        // Activity logging log text format:
         let actionVerb = 'Gửi hóa đơn ';
         if (bill.collected) {
           actionVerb = 'Đã thu tiền ';
@@ -508,6 +703,243 @@ export class RoomService {
     }
 
     return bill;
+  }
+
+  public async checkoutPreview(roomId: string, payload: { checkoutDate: string; finalElec: number; finalWater?: number }, lodgeId?: string): Promise<any> {
+    const room = await RoomModel.findById(roomId);
+    if (!room) throw new ApiError(404, 'Không tìm thấy phòng trọ');
+
+    if (lodgeId && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền thao tác trên phòng trọ này');
+    }
+
+    const tenant = await TenantModel.findOne({ room: roomId, status: 'active' });
+    if (!tenant) throw new ApiError(400, 'Phòng này hiện không có khách thuê để trả phòng');
+
+    const lodge = await LodgeModel.findById(room.lodge);
+    const billingD = lodge?.billingDate || 25;
+
+    const parseDateStr = (dateStr: string): Date => {
+      if (!dateStr) return new Date();
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        return new Date(y, m, d);
+      }
+      return new Date(dateStr);
+    };
+
+    const dCheckout = parseDateStr(payload.checkoutDate);
+    const year = dCheckout.getFullYear();
+    const month = dCheckout.getMonth() + 1;
+    const checkoutDay = dCheckout.getDate();
+
+    let cycleStart: Date;
+    let cycleEnd: Date;
+
+    if (checkoutDay > billingD) {
+      cycleStart = new Date(year, month - 1, billingD);
+      cycleEnd = new Date(year, month, billingD);
+    } else {
+      cycleStart = new Date(year, month - 2, billingD);
+      cycleEnd = new Date(year, month - 1, billingD);
+    }
+
+    const totalDaysInCycle = Math.max(1, Math.round((cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 3600 * 24)));
+    const dCheckin = tenant.checkin ? parseDateStr(tenant.checkin) : cycleStart;
+    const dEffectiveStart = (!isNaN(dCheckin.getTime()) && dCheckin > cycleStart) ? dCheckin : cycleStart;
+    
+    const daysStayed = Math.max(1, Math.round((dCheckout.getTime() - dEffectiveStart.getTime()) / (1000 * 3600 * 24)));
+    const ratio = Math.min(1, daysStayed / totalDaysInCycle);
+
+    const defaultPrices = {
+      elec: 3500.0,
+      water: 15000.0,
+      wifi: 100000.0,
+      garbage: 20000.0,
+      waterMode: 'meter',
+      waterFixed: 100000.0,
+    };
+    const prices = (await UtilityPriceModel.findOne({ lodge: room.lodge })) || defaultPrices;
+
+    // Prior readings
+    const readings = await MeterReadingModel.find({ room: roomId }).sort({ date: -1 });
+    const priorReading = readings.length > 0 ? readings[0] : null;
+
+    const pElec = priorReading ? priorReading.elec : (tenant.handoverElec || room.initialElec || (room as any).ep || 0);
+    const pWater = priorReading ? priorReading.water : (tenant.handoverWater || room.initialWater || (room as any).wp || 0);
+
+    const eUse = Math.max(0, payload.finalElec - pElec);
+    const wUse = Math.max(0, (payload.finalWater || 0) - pWater);
+
+    const membersCount = await MemberModel.countDocuments({ room: roomId });
+    const totalPeople = 1 + membersCount;
+
+    const eAmt = eUse * (prices.elec || 0);
+    const isWaterByPerson = prices.waterMode === 'person' || prices.waterMode === 'fixed';
+    const wAmt = isWaterByPerson
+      ? Math.round((prices.waterFixed || 0) * totalPeople * ratio)
+      : (wUse * (prices.water || 0));
+
+    let rent = Math.round(parseFloat((room.price || 0).toString()) * ratio);
+    let wifiAmt = Math.round((prices.wifi || 0) * ratio);
+    let garbageAmt = Math.round((prices.garbage || 0) * ratio);
+
+    const prepaidUntil = tenant.prepaidUntil || (room as any).contractPrepaid || 0;
+    const prepaidDeduction = prepaidUntil > 0 ? rent : 0;
+    const unusedPrepaidPeriods = Math.max(0, prepaidUntil - 1);
+
+    const finalBillTotal = rent + eAmt + wAmt + wifiAmt + garbageAmt - prepaidDeduction;
+
+    const existingUnpaidBills = await BillModel.find({
+      room: roomId,
+      tenant: tenant._id,
+      collected: false,
+    }).sort({ date: 1 });
+
+    return {
+      room: { id: room._id, name: room.name, price: room.price },
+      tenant: {
+        id: tenant._id,
+        name: tenant.name,
+        phone: tenant.phone,
+        checkin: tenant.checkin,
+        prepaidUntil: tenant.prepaidUntil,
+      },
+      checkoutBill: {
+        periodStart: dEffectiveStart.toISOString().split('T')[0],
+        periodEnd: payload.checkoutDate,
+        date: payload.checkoutDate,
+        rent,
+        elecOld: pElec,
+        elecNew: payload.finalElec,
+        elecUsage: eUse,
+        elecPrice: prices.elec || 0,
+        elecAmount: eAmt,
+        waterOld: pWater,
+        waterNew: payload.finalWater || 0,
+        waterUsage: isWaterByPerson ? totalPeople : wUse,
+        waterPrice: isWaterByPerson ? (prices.waterFixed || 0) : (prices.water || 0),
+        waterAmount: wAmt,
+        wifiAmount: wifiAmt,
+        garbageAmount: garbageAmt,
+        prepaidDeduction,
+        total: finalBillTotal,
+        daysStayed,
+        totalDaysInCycle,
+        ratio,
+      },
+      unpaidBills: existingUnpaidBills,
+      unusedPrepaidPeriods,
+    };
+  }
+
+  public async checkoutComplete(roomId: string, payload: any, lodgeId?: string): Promise<any> {
+    const room = await RoomModel.findById(roomId);
+    if (!room) throw new ApiError(404, 'Không tìm thấy phòng trọ');
+
+    if (lodgeId && room.lodge.toString() !== lodgeId.toString()) {
+      throw new ApiError(403, 'Bạn không có quyền thao tác trên phòng trọ này');
+    }
+
+    const tenant = await TenantModel.findOne({ room: roomId, status: 'active' });
+    if (!tenant) throw new ApiError(400, 'Phòng này hiện không có khách thuê');
+
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        // 1. Tạo hóa đơn chia tay cuối cùng
+        const cBill = payload.checkoutBill;
+        let finalBillDoc: any = null;
+        if (cBill) {
+          finalBillDoc = new BillModel({
+            room: roomId,
+            tenant: tenant._id,
+            tenantName: tenant.name,
+            periodStart: cBill.periodStart,
+            periodEnd: cBill.periodEnd,
+            date: cBill.date || payload.checkoutDate,
+            rent: cBill.rent || 0,
+            elecOld: cBill.elecOld || 0,
+            elecNew: cBill.elecNew || 0,
+            elecUsage: cBill.elecUsage || 0,
+            elecPrice: cBill.elecPrice || 0,
+            elecAmount: cBill.elecAmount || 0,
+            waterOld: cBill.waterOld || 0,
+            waterNew: cBill.waterNew || 0,
+            waterUsage: cBill.waterUsage || 0,
+            waterPrice: cBill.waterPrice || 0,
+            waterAmount: cBill.waterAmount || 0,
+            wifiAmount: cBill.wifiAmount || 0,
+            garbageAmount: cBill.garbageAmount || 0,
+            prepaidDeduction: cBill.prepaidDeduction || 0,
+            total: cBill.total || 0,
+            amountPaid: 0,
+            sent: true,
+            collected: false,
+            status: 'unpaid',
+          });
+          await finalBillDoc.save({ session });
+        }
+
+        // 2. Xử lý các hóa đơn trong Bảng kiểm toán (settledBills)
+        const settledBills = payload.settledBills || [];
+        for (const item of settledBills) {
+          let billId = item.billId;
+          if (item.isCheckoutBill && finalBillDoc) {
+            billId = finalBillDoc._id;
+          }
+          if (!billId) continue;
+
+          const b = await BillModel.findById(billId).session(session);
+          if (!b) continue;
+
+          if (item.action === 'pay') {
+            const addPaid = Number(item.amountPaid) || 0;
+            b.amountPaid = (b.amountPaid || 0) + addPaid;
+            b.collected = b.amountPaid >= b.total;
+            b.status = getPaymentLockState(b.total, b.amountPaid);
+            if (b.amountPaid > 0) b.paidAt = payload.checkoutDate;
+            await b.save({ session });
+          } else if (item.action === 'freeze_debt') {
+            b.hasOldDebt = true;
+            b.oldTenantName = tenant.name;
+            b.oldDebtAmount = Math.max(0, b.total - (b.amountPaid || 0));
+            b.status = getPaymentLockState(b.total, b.amountPaid);
+            await b.save({ session });
+          }
+        }
+
+        // 3. Cập nhật khách thuê -> moved_out
+        tenant.status = 'moved_out';
+        tenant.checkout = payload.checkoutDate;
+        await tenant.save({ session });
+
+        // 4. Cập nhật phòng -> empty và reset chỉ số bàn giao
+        room.status = 'empty';
+        room.initialElec = payload.finalElec !== undefined ? payload.finalElec : room.initialElec;
+        if (payload.finalWater !== undefined) {
+          room.initialWater = payload.finalWater;
+        }
+        await room.save({ session });
+
+        // 5. Gỡ bỏ người ở cùng khỏi phòng
+        await MemberModel.deleteMany({ room: roomId }).session(session);
+
+        // 6. Ghi nhật ký hoạt động
+        await activityService.logActivityByLodge(
+          room.lodge.toString(),
+          `${room.name} · Trả phòng: ${tenant.name}`,
+          'checkout'
+        );
+      });
+    } finally {
+      session.endSession();
+    }
+
+    return { success: true, message: 'Đã hoàn tất trả phòng thành công' };
   }
 
   private escapeRegex(value: string): string {
@@ -596,7 +1028,7 @@ export class RoomService {
       };
     }
 
-    if (action === 'Đã ghi điện nước') {
+    if (action.startsWith('Đã ghi điện nước')) {
       const monthKey = sortTime.slice(0, 7);
       if (meterMonths.has(monthKey)) return null;
       return {
@@ -604,7 +1036,7 @@ export class RoomService {
         type: 'meter',
         sortTime,
         title: 'Ghi điện nước',
-        subtitle: 'Đã cập nhật chỉ số',
+        subtitle: action,
         dateLabel,
       };
     }
@@ -640,16 +1072,16 @@ export class RoomService {
 
     const bills = (room.bills || []) as IBill[];
     bills
-      .filter((b) => b.collected)
+      .filter((b) => b.collected || (b.amountPaid || 0) > 0)
       .forEach((b) => {
         addItem({
           key: `paid-${b._id}`,
           type: 'payment',
           sortTime: b.date ? `${b.date}T12:00:00` : new Date().toISOString(),
-          title: 'Đã thanh toán',
+          title: b.collected ? 'Đã thanh toán' : 'Thu một phần',
           subtitle: b.sent ? 'Đã gửi hóa đơn' : this.formatBillPeriod(b.date),
           dateLabel: this.formatBillPeriod(b.date),
-          amount: Number(b.total) || 0,
+          amount: Number(b.amountPaid || b.total) || 0,
         });
       });
 
@@ -661,7 +1093,7 @@ export class RoomService {
         type: 'member',
         sortTime,
         title: 'Thêm người ở cùng',
-        subtitle: [m.name, m.phone].filter(Boolean).join(' · '),
+        subtitle: [m.name, m.relation, m.phone].filter(Boolean).join(' · '),
         dateLabel: m.createdAt ? this.formatHistoryDate(sortTime) : '--',
       });
     });

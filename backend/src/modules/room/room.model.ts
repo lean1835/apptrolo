@@ -1,30 +1,20 @@
-
 import mongoose, { Schema } from 'mongoose';
 import { IRoom } from '@common/interfaces/room.interface';
 
 const RoomSchema = new Schema<IRoom>(
   {
-    name: { type: String, required: true, trim: true },
-    price: { type: Number, required: true },
+    name: { type: String, required: true, trim: true }, // Tên phòng P1...P10
+    price: { type: Number, required: true }, // Giá thuê
     status: {
       type: String,
-      enum: ['empty', 'occupied', 'debt', 'maintenance'],
+      enum: ['empty', 'occupied', 'maintenance', 'debt'],
       default: 'empty',
-    },
-    tenant: { type: Schema.Types.ObjectId, ref: 'Tenants' },
-    checkin: { type: String, default: '' }, // YYYY-MM-DD
-    people: { type: Number, default: 0 },
-    ep: { type: Number, default: 0.0 },
-    wp: { type: Number, default: 0.0 },
-    descText: { type: String, default: '', trim: true },
-    contract: {
-      type: String,
-      enum: ['monthly', 'quarter', 'halfyear'],
-      default: 'monthly',
-    },
-    contractMonths: { type: Number, default: 0 },
-    contractPrepaid: { type: Number, default: 0 },
+    }, // Trạng thái chọn tay: Trống / Có khách / Bảo trì
+    descText: { type: String, default: '', trim: true }, // Mô tả
+    initialElec: { type: Number, default: 0.0 }, // CHỈ SỐ GỐC điện
+    initialWater: { type: Number, default: 0.0 }, // CHỈ SỐ GỐC nước
     lodge: { type: Schema.Types.ObjectId, ref: 'Lodges', required: true },
+    tenant: { type: Schema.Types.ObjectId, ref: 'Tenants' },
     debtAmount: { type: Number, default: 0 },
   },
   {
@@ -32,9 +22,18 @@ const RoomSchema = new Schema<IRoom>(
     toJSON: {
       virtuals: true,
       transform: (doc, ret) => {
+        // Compatibility with mobile client expecting ep/wp
+        ret.ep = ret.initialElec !== undefined ? ret.initialElec : 0;
+        ret.wp = ret.initialWater !== undefined ? ret.initialWater : 0;
+
         if (ret.tenant && typeof ret.tenant === 'object') {
           ret.phone = ret.tenant.phone || '';
           ret.tenantId = ret.tenant._id;
+          ret.checkin = ret.tenant.checkin || '';
+          ret.contract = ret.tenant.contract || 'monthly';
+          ret.contractMonths = ret.tenant.contractMonths || 1;
+          ret.contractPrepaid = ret.tenant.prepaidUntil || 0;
+          ret.prepaidUntil = ret.tenant.prepaidUntil || 0;
           ret.tenant = ret.tenant.name || '';
         } else if (ret.tenant) {
           ret.tenantId = ret.tenant;
@@ -46,14 +45,22 @@ const RoomSchema = new Schema<IRoom>(
           ret.tenantId = null;
         }
         return ret;
-      }
+      },
     },
     toObject: {
       virtuals: true,
       transform: (doc, ret) => {
+        ret.ep = ret.initialElec !== undefined ? ret.initialElec : 0;
+        ret.wp = ret.initialWater !== undefined ? ret.initialWater : 0;
+
         if (ret.tenant && typeof ret.tenant === 'object') {
           ret.phone = ret.tenant.phone || '';
           ret.tenantId = ret.tenant._id;
+          ret.checkin = ret.tenant.checkin || '';
+          ret.contract = ret.tenant.contract || 'monthly';
+          ret.contractMonths = ret.tenant.contractMonths || 1;
+          ret.contractPrepaid = ret.tenant.prepaidUntil || 0;
+          ret.prepaidUntil = ret.tenant.prepaidUntil || 0;
           ret.tenant = ret.tenant.name || '';
         } else if (ret.tenant) {
           ret.tenantId = ret.tenant;
@@ -65,12 +72,20 @@ const RoomSchema = new Schema<IRoom>(
           ret.tenantId = null;
         }
         return ret;
-      }
+      },
     },
   }
 );
 
-// Virtual fields for relations (similar to JPA OneToMany)
+// Virtual relations
+RoomSchema.virtual('tenantDoc', {
+  ref: 'Tenants',
+  localField: '_id',
+  foreignField: 'room',
+  justOne: true,
+  match: { status: 'active' },
+});
+
 RoomSchema.virtual('members', {
   ref: 'Members',
   localField: '_id',

@@ -25,6 +25,8 @@ const AddTenantScreen = () => {
         checkin: new Date().toISOString().split('T')[0],
         contract: 'monthly',
         contractPrepaid: '0',
+        handoverElec: '0',
+        handoverWater: '0',
         ep: '0',
         wp: '0',
     });
@@ -52,22 +54,33 @@ const AddTenantScreen = () => {
     const monthsArray = Array.from({ length: 12 }, (_, i) => i + 1);
     const yearsArray = Array.from({ length: 11 }, (_, i) => 2020 + i);
 
+    const [prices, setPrices] = useState(null);
+
     useEffect(() => {
-        const fetchRoom = async () => {
+        const fetchData = async () => {
             try {
-                const res = await axiosInstance.get(`/rooms/${id}`);
-                const found = res.data;
+                const [resRoom, resPrices] = await Promise.all([
+                    axiosInstance.get(`/rooms/${id}`),
+                    axiosInstance.get('/utility-prices').catch(() => ({ data: null }))
+                ]);
+                const found = resRoom.data;
+                if (resPrices.data) {
+                    setPrices(resPrices.data);
+                }
                 if (found) {
                     setRoom(found);
+                    const initElec = found.handoverElec ?? found.initialElec ?? found.ep ?? '0';
+                    const initWater = found.handoverWater ?? found.initialWater ?? found.wp ?? '0';
                     setForm({
-                        ...form,
                         tenant: found.tenant || '',
                         phone: found.phone || '',
                         checkin: found.checkin || new Date().toISOString().split('T')[0],
-                        ep: found.ep?.toString() || '0',
-                        wp: found.wp?.toString() || '0',
+                        handoverElec: initElec.toString(),
+                        handoverWater: initWater.toString(),
+                        ep: initElec.toString(),
+                        wp: initWater.toString(),
                         contract: found.contract || 'monthly',
-                        contractPrepaid: found.contractPrepaid?.toString() || '0',
+                        contractPrepaid: (found.prepaidUntil ?? found.contractPrepaid ?? '0').toString(),
                     });
                 }
             } catch (err) {
@@ -76,12 +89,34 @@ const AddTenantScreen = () => {
                 setLoading(false);
             }
         };
-        fetchRoom();
+        fetchData();
     }, [id]);
 
+    const isWaterMeter = prices?.waterMode === 'meter' || (!prices?.waterMode && prices?.waterMode !== 'fixed');
+
     const handleSave = async () => {
-        if (!form.tenant || !form.phone) {
-            Alert.alert("Lỗi", "Vui lòng nhập tên và số điện thoại");
+        if (!form.tenant || !form.tenant.trim()) {
+            Alert.alert("Lỗi", "Vui lòng nhập họ và tên khách thuê");
+            return;
+        }
+
+        if (!form.phone || !form.phone.trim()) {
+            Alert.alert("Lỗi", "Vui lòng nhập số điện thoại");
+            return;
+        }
+
+        if (!form.checkin || !form.checkin.trim()) {
+            Alert.alert("Lỗi", "Vui lòng chọn ngày vào ở");
+            return;
+        }
+
+        if (form.handoverElec === '' || isNaN(parseFloat(form.handoverElec))) {
+            Alert.alert("Lỗi", "Vui lòng nhập chỉ số điện bàn giao");
+            return;
+        }
+
+        if (isWaterMeter && (form.handoverWater === '' || isNaN(parseFloat(form.handoverWater)))) {
+            Alert.alert("Lỗi", "Vui lòng nhập chỉ số nước bàn giao");
             return;
         }
 
@@ -91,18 +126,23 @@ const AddTenantScreen = () => {
                 name: room.name,
                 price: room.price,
                 status: 'occupied',
-                tenant: form.tenant,
-                phone: form.phone,
-                people: 1, // Default to 1 (the tenant)
+                tenant: form.tenant.trim(),
+                phone: form.phone.trim(),
+                people: room.people && room.people > 1 ? room.people : 1,
                 checkin: form.checkin,
                 contract: form.contract,
-                contractPrepaid: parseInt(form.contractPrepaid) || 0,
+                contractPrepaid: parseInt(form.contractPrepaid, 10) || 0,
+                prepaidUntil: parseInt(form.contractPrepaid, 10) || 0,
+                handoverElec: parseFloat(form.handoverElec || form.ep) || 0,
+                handoverWater: isWaterMeter ? (parseFloat(form.handoverWater || form.wp) || 0) : 0,
+                ep: parseFloat(form.handoverElec || form.ep) || 0,
+                wp: isWaterMeter ? (parseFloat(form.handoverWater || form.wp) || 0) : 0,
             };
             await axiosInstance.put(`/rooms/${id}`, updatedRoom);
             Alert.alert("Thành công", "Đã cập nhật thông tin khách thuê");
             router.back();
         } catch (err) {
-            Alert.alert("Lỗi", "Không thể lưu thông tin");
+            Alert.alert("Lỗi", "Không thể lưu thông tin: " + (err.response?.data?.message || err.message));
         } finally {
             setSaving(false);
         }
@@ -152,7 +192,7 @@ const AddTenantScreen = () => {
                     }}>
                         <View pointerEvents="none">
                             <Input 
-                                label="Ngày vào ở (Chạm để chọn)" 
+                                label="Ngày vào ở (Chạm để chọn) *" 
                                 placeholder="YYYY-MM-DD" 
                                 value={form.checkin}
                                 editable={false}
@@ -179,12 +219,41 @@ const AddTenantScreen = () => {
                     
                     {form.contract !== 'monthly' && (
                         <Input 
-                            label="Số tháng trả trước" 
+                            label="Số kỳ trả trước (kỳ = tháng)" 
                             keyboardType="numeric"
                             value={form.contractPrepaid}
                             onChangeText={(v) => setForm({...form, contractPrepaid: v})}
                         />
                     )}
+                </View>
+
+                <View style={styles.card}>
+                    <Text style={styles.htit}>Chỉ số bàn giao khi nhận phòng</Text>
+                    <Text style={{ fontSize: 11, color: COLORS.g3, marginBottom: 12 }}>
+                        Điền sẵn từ chỉ số gốc của phòng, được phép điều chỉnh theo thực tế bàn giao.
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <View style={{ flex: 1 }}>
+                            <Input 
+                                label="Điện bàn giao (kWh) *" 
+                                keyboardType="numeric"
+                                placeholder="0"
+                                value={form.handoverElec || form.ep}
+                                onChangeText={(v) => setForm({...form, handoverElec: v, ep: v})}
+                            />
+                        </View>
+                        {isWaterMeter && (
+                            <View style={{ flex: 1 }}>
+                                <Input 
+                                    label="Nước bàn giao (m³) *" 
+                                    keyboardType="numeric"
+                                    placeholder="0"
+                                    value={form.handoverWater || form.wp}
+                                    onChangeText={(v) => setForm({...form, handoverWater: v, wp: v})}
+                                />
+                            </View>
+                        )}
+                    </View>
                 </View>
 
                 <Button 

@@ -21,7 +21,10 @@ const LodgeInfoScreen = () => {
         address: '',
         phone: '',
         bank: '',
+        bankAccount: '',
         bankName: '',
+        billingDate: '25',
+        earlyRecordDays: '3',
     });
 
     useEffect(() => {
@@ -34,7 +37,10 @@ const LodgeInfoScreen = () => {
                         address: res.data.address || '',
                         phone: res.data.phone || '',
                         bank: res.data.bank || '',
+                        bankAccount: res.data.bankAccount || res.data.bank || '',
                         bankName: res.data.bankName || '',
+                        billingDate: res.data.billingDate?.toString() || '25',
+                        earlyRecordDays: res.data.earlyRecordDays?.toString() || '3',
                     });
                 }
             } catch (err) {
@@ -52,9 +58,21 @@ const LodgeInfoScreen = () => {
             return;
         }
 
+        const bDate = parseInt(form.billingDate, 10);
+        if (isNaN(bDate) || bDate < 1 || bDate > 28) {
+            Alert.alert("Lỗi", "Ngày chốt điện nước phải từ ngày 1 đến 28 hàng tháng");
+            return;
+        }
+
         setSaving(true);
         try {
-            await axiosInstance.put('/lodge', form);
+            const payload = {
+                ...form,
+                bankAccount: form.bankAccount || form.bank,
+                billingDate: bDate,
+                earlyRecordDays: parseInt(form.earlyRecordDays, 10) || 3,
+            };
+            await axiosInstance.put('/lodge', payload);
             Alert.alert("Thành công", "Đã cập nhật thông tin nhà trọ");
             router.back();
         } catch (err) {
@@ -104,6 +122,25 @@ const LodgeInfoScreen = () => {
                 </View>
 
                 <View style={styles.card}>
+                    <Text style={styles.hsub}>Chu kỳ ghi điện nước & Thu tiền</Text>
+                    <Input 
+                        label="Ngày ghi điện nước D (từ 1 đến 28) *" 
+                        value={form.billingDate}
+                        onChangeText={(v) => setForm({...form, billingDate: v})}
+                        keyboardType="numeric"
+                        placeholder="25"
+                    />
+                    <Input 
+                        label="Số ngày mở cửa sổ ghi sớm (mặc định 3 ngày)" 
+                        value={form.earlyRecordDays}
+                        onChangeText={(v) => setForm({...form, earlyRecordDays: v})}
+                        keyboardType="numeric"
+                        placeholder="3"
+                    />
+                    <Text style={styles.note}>Ví dụ: Ngày chốt là 25, mở sớm 3 ngày thì từ ngày 22 chủ trọ đã có thể bắt đầu ghi chỉ số điện nước.</Text>
+                </View>
+
+                <View style={styles.card}>
                     <Text style={styles.hsub}>Tài khoản nhận tiền (QR Code)</Text>
                     <Input 
                         label="Ngân hàng" 
@@ -112,9 +149,9 @@ const LodgeInfoScreen = () => {
                         placeholder="Ví dụ: MB Bank, Vietcombank..."
                     />
                     <Input 
-                        label="Số tài khoản" 
-                        value={form.bank}
-                        onChangeText={(v) => setForm({...form, bank: v})}
+                        label="Số tài khoản (QR)" 
+                        value={form.bankAccount || form.bank}
+                        onChangeText={(v) => setForm({...form, bankAccount: v, bank: v})}
                         keyboardType="numeric"
                         placeholder="Nhập STK ngân hàng của bạn"
                     />
@@ -168,4 +205,3 @@ const styles = StyleSheet.create({
 });
 
 export default LodgeInfoScreen;
-

@@ -145,8 +145,26 @@ const RoomDetailScreen = () => {
   };
 
   const handleDeleteRoom = () => {
+    const hasHistory = (room.status === 'occupied') || 
+      (room.bills && room.bills.length > 0) || 
+      (room.meterReadings && room.meterReadings.length > 0) || 
+      (historyItems && historyItems.length > 0);
+
+    if (hasHistory) {
+      if (Platform.OS === 'web') {
+        alert("Không thể xóa phòng này vì phòng đã từng có khách hoặc có lịch sử hóa đơn/điện nước. Để đảm bảo toàn vẹn dữ liệu kế toán, chỉ được xóa phòng khi phòng chưa từng có khách/hóa đơn.");
+      } else {
+        Alert.alert(
+          "Không thể xóa phòng",
+          "Phòng này đã từng có khách hoặc có lịch sử hóa đơn/điện nước. Để đảm bảo toàn vẹn dữ liệu kế toán, chỉ được xóa phòng khi phòng chưa từng có khách/hóa đơn.",
+          [{ text: "Đã hiểu", style: "default" }]
+        );
+      }
+      return;
+    }
+
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(`Xóa phòng ${room.name} cùng toàn bộ dữ liệu (khách, hóa đơn, điện nước)? Hành động này không thể phục hồi.`);
+      const confirmed = window.confirm(`Xóa phòng ${room.name}? Hành động này không thể phục hồi.`);
       if (confirmed) {
         (async () => {
           try {
@@ -163,7 +181,7 @@ const RoomDetailScreen = () => {
 
     Alert.alert(
       "Xóa phòng",
-      `Xóa phòng ${room.name} cùng toàn bộ dữ liệu (khách, hóa đơn, điện nước)? Hành động này không thể phục hồi.`,
+      `Xóa phòng ${room.name}? Hành động này không thể phục hồi.`,
       [
         { text: "Hủy", style: "cancel" },
         { 
@@ -462,7 +480,9 @@ const RoomDetailScreen = () => {
                 <View style={styles.leaseItem}>
                   <Text style={styles.leaseLabel}>ĐÃ TRẢ TRƯỚC</Text>
                   <Text style={styles.leaseValue}>
-                    {room.contractPrepaid > 0 ? `${room.contractPrepaid} tháng` : "Không có"}
+                    {(room.contractPrepaid > 0 || room.prepaidUntil > 0)
+                      ? `${room.prepaidUntil || room.contractPrepaid} kỳ (${((room.prepaidUntil || room.contractPrepaid) * (parseFloat(room.price) || 0)).toLocaleString('vi')} đ)`
+                      : "0 kỳ"}
                   </Text>
                 </View>
               </View>
@@ -540,7 +560,7 @@ const RoomDetailScreen = () => {
                   {/* Checkout Room Button */}
                   <TouchableOpacity 
                     style={[styles.btnSecondaryAction, { borderColor: COLORS.rose, backgroundColor: 'rgba(225, 29, 72, 0.02)' }]}
-                    onPress={handleCheckout}
+                    onPress={() => router.push({ pathname: '/checkout', params: { id: roomId } })}
                     activeOpacity={0.8}
                   >
                     <DoorIcon size={16} color={COLORS.rose} />

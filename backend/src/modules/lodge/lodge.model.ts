@@ -7,12 +7,25 @@ const LodgeSchema = new Schema<ILodge>(
     address: { type: String, trim: true, default: '' },
     phone: { type: String, required: true, trim: true },
     bank: { type: String, trim: true, default: '' },
+    bankAccount: { type: String, trim: true, default: '' },
     bankName: { type: String, trim: true, default: '' },
+    billingDate: { type: Number, default: 25, min: 1, max: 28 }, // Ngày ghi điện nước D (1→28)
+    earlyRecordDays: { type: Number, default: 3, min: 0 }, // Số ngày mở cửa sổ sớm (mặc định 3)
     owner: { type: Schema.Types.ObjectId, ref: 'Users', required: true },
     utilityPrice: { type: Schema.Types.ObjectId, ref: 'UtilityPrices' },
   },
   {
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
+    toJSON: {
+      virtuals: true,
+      transform: (doc, ret) => {
+        // Compatibility: ensure bankAccount is set if bank exists or vice versa
+        if (!ret.bankAccount && ret.bank) {
+          ret.bankAccount = ret.bank;
+        }
+        return ret;
+      },
+    },
   }
 );
 

@@ -14,6 +14,22 @@ declare global {
 }
 
 
+interface CachedUserSession {
+  user: any;
+  cachedAt: number;
+}
+
+const userSessionCache = new Map<string, CachedUserSession>();
+const CACHE_TTL_MS = 60 * 1000; // 60 giây
+
+export const clearUserCache = (phone?: string) => {
+  if (phone) {
+    userSessionCache.delete(phone);
+  } else {
+    userSessionCache.clear();
+  }
+};
+
 export const authenticationMiddleware = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
@@ -30,15 +46,22 @@ export const authenticationMiddleware = catchAsync(
         throw new ApiError(401, 'Phiên đăng nhập không hợp lệ');
       }
 
-      const user = await UserModel.findOne({ phone }).populate({
-        path: 'lodge',
-        populate: {
-          path: 'utilityPrice'
+      const now = Date.now();
+      const cached = userSessionCache.get(phone);
+      let user: any = null;
+
+      if (cached && (now - cached.cachedAt < CACHE_TTL_MS)) {
+        user = cached.user;
+      } else {
+        user = await UserModel.findOne({ phone })
+          .populate({ path: 'lodge', select: '_id name' })
+          .lean();
+        
+        if (!user) {
+          throw new ApiError(401, 'Tài khoản không tồn tại trong hệ thống');
         }
-      });
-      
-      if (!user) {
-        throw new ApiError(401, 'Tài khoản không tồn tại trong hệ thống');
+
+        userSessionCache.set(phone, { user, cachedAt: now });
       }
 
       // Attach user to request object

@@ -8,6 +8,8 @@ import axiosInstance from '../../../services/api';
 import { Button, Input } from '../../../components/Common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const RELATION_OPTIONS = ['Bạn', 'Vợ/Chồng', 'Con', 'Anh/Chị/Em', 'Khác'];
+
 const AddMemberScreen = () => {
     const { roomId } = useLocalSearchParams();
     const router = useRouter();
@@ -17,6 +19,7 @@ const AddMemberScreen = () => {
     const [form, setForm] = useState({
         name: '',
         phone: '',
+        relation: 'Bạn',
         note: '',
     });
 
@@ -54,7 +57,7 @@ const AddMemberScreen = () => {
 
             <ScrollView contentContainerStyle={styles.scroll}>
                 <View style={styles.card}>
-                    <Text style={styles.hsub}>Nhập thông tin người ở cùng để quản lý thông tin cư trú tốt hơn.</Text>
+                    <Text style={styles.hsub}>Nhập thông tin người ở cùng để quản lý thông tin cư trú và tính tiền nước theo đầu người.</Text>
                     
                     <Input 
                         label="Họ và tên *" 
@@ -69,9 +72,25 @@ const AddMemberScreen = () => {
                         value={form.phone}
                         onChangeText={(v) => setForm({...form, phone: v})}
                     />
+
+                    <Text style={styles.lbl}>Quan hệ với khách chính</Text>
+                    <View style={styles.segwrap}>
+                        {RELATION_OPTIONS.map(rel => (
+                            <TouchableOpacity 
+                                key={rel}
+                                style={[styles.seg, form.relation === rel && styles.segOn]}
+                                onPress={() => setForm({...form, relation: rel})}
+                            >
+                                <Text style={[styles.segTxt, form.relation === rel && styles.segTxtOn]}>
+                                    {rel}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
                     <Input 
-                        label="Ghi chú / Quan hệ" 
-                        placeholder="Vợ / Chồng / Bạn cùng phòng..." 
+                        label="Ghi chú thêm" 
+                        placeholder="Ghi chú khác nếu có..." 
                         value={form.note}
                         onChangeText={(v) => setForm({...form, note: v})}
                     />
@@ -118,7 +137,12 @@ const styles = StyleSheet.create({
         ...SHADOWS.sh,
     },
     hsub: { fontSize: 13, color: COLORS.g4, marginBottom: 20, fontWeight: '600', lineHeight: 18 },
+    lbl: { fontSize: 11, color: COLORS.g4, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 },
+    segwrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 15 },
+    seg: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: COLORS.g6, borderWidth: 1, borderColor: COLORS.border },
+    segOn: { backgroundColor: COLORS.prLight || '#EEF2FF', borderColor: COLORS.pr },
+    segTxt: { fontSize: 12, fontWeight: '600', color: COLORS.g3 },
+    segTxtOn: { color: COLORS.pr, fontWeight: '700' }
 });
 
 export default AddMemberScreen;
-

@@ -11,6 +11,8 @@ import {
   removeMember,
   addMeterReading,
   createBill,
+  checkoutPreview,
+  checkoutComplete,
 } from './room.controller';
 import {
   createRoomSchema,
@@ -29,6 +31,10 @@ router.get('/:id/history', getRoomHistory);
 router.get('/:id', getRoom);
 router.put('/:id', validate(updateRoomSchema), updateRoom);
 router.delete('/:id', deleteRoom);
+
+// Checkout (Trả phòng)
+router.post('/:id/checkout-preview', checkoutPreview);
+router.post('/:id/checkout-complete', checkoutComplete);
 
 // Members
 router.post('/:id/members', validate(memberSchema), addMember);

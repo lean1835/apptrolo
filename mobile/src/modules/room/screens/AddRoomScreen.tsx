@@ -114,23 +114,23 @@ const AddRoomScreen = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectit}>Chỉ số đầu kỳ</Text>
+          <Text style={styles.sectit}>CHỈ SỐ GỐC</Text>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Input 
-                label="Chỉ số điện (kWh)" 
+                label="Chỉ số điện gốc (kWh) *" 
                 placeholder="0"
                 keyboardType="numeric"
                 value={form.ep}
                 onChangeText={(txt) => setForm({...form, ep: txt})}
               />
             </View>
-            {prices?.waterMode !== 'fixed' && (
+            {(prices?.waterMode === 'meter' || (!prices?.waterMode && prices?.waterMode !== 'fixed')) && (
               <>
                 <View style={{ width: 15 }} />
                 <View style={{ flex: 1 }}>
                   <Input 
-                    label="Chỉ số nước (m³)" 
+                    label="Chỉ số nước gốc (m³) *" 
                     placeholder="0"
                     keyboardType="numeric"
                     value={form.wp}

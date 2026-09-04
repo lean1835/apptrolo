@@ -3,8 +3,8 @@ import { IUtilityPrice } from '@common/interfaces/utilityPrice.interface';
 import { ApiError } from '@common/utils/ApiError';
 
 export class UtilityPriceService {
-  public async getUtilityPriceByLodge(lodgeId: string): Promise<IUtilityPrice> {
-    const utilityPrice = await UtilityPriceModel.findOne({ lodge: lodgeId });
+  public async getUtilityPriceByLodge(lodgeId: string): Promise<any> {
+    const utilityPrice = await UtilityPriceModel.findOne({ lodge: lodgeId }).lean();
     if (!utilityPrice) {
       throw new ApiError(404, 'Không tìm thấy cấu hình bảng giá điện nước');
     }

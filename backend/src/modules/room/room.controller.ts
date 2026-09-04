@@ -30,7 +30,8 @@ export const createRoom = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const getRoom = catchAsync(async (req: Request, res: Response) => {
-  const room = await roomService.getRoomById(req.params.id);
+  const lodgeId = req.users?.lodge?._id?.toString();
+  const room = await roomService.getRoomById(req.params.id, lodgeId);
   res.status(200).json({
     success: true,
     message: 'Lấy chi tiết phòng thành công',
@@ -63,12 +64,14 @@ export const updateRoom = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const deleteRoom = catchAsync(async (req: Request, res: Response) => {
-  await roomService.deleteRoom(req.params.id);
+  const lodgeId = req.users?.lodge?._id?.toString();
+  await roomService.deleteRoom(req.params.id, lodgeId);
   res.status(204).send();
 });
 
 export const addMember = catchAsync(async (req: Request, res: Response) => {
-  const member = await roomService.addMember(req.params.id, req.body);
+  const lodgeId = req.users?.lodge?._id?.toString();
+  const member = await roomService.addMember(req.params.id, req.body, lodgeId);
   res.status(200).json({
     success: true,
     message: 'Thêm người ở cùng thành công',
@@ -77,12 +80,14 @@ export const addMember = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const removeMember = catchAsync(async (req: Request, res: Response) => {
-  await roomService.removeMember(req.params.memberId);
+  const lodgeId = req.users?.lodge?._id?.toString();
+  await roomService.removeMember(req.params.memberId, lodgeId);
   res.status(204).send();
 });
 
 export const addMeterReading = catchAsync(async (req: Request, res: Response) => {
-  const reading = await roomService.addMeterReading(req.params.id, req.body);
+  const lodgeId = req.users?.lodge?._id?.toString();
+  const reading = await roomService.addMeterReading(req.params.id, req.body, lodgeId);
   res.status(200).json({
     success: true,
     message: 'Ghi số điện nước thành công',
@@ -91,10 +96,31 @@ export const addMeterReading = catchAsync(async (req: Request, res: Response) =>
 });
 
 export const createBill = catchAsync(async (req: Request, res: Response) => {
-  const bill = await roomService.createBill(req.params.id, req.body);
+  const lodgeId = req.users?.lodge?._id?.toString();
+  const bill = await roomService.createBill(req.params.id, req.body, lodgeId);
   res.status(200).json({
     success: true,
     message: 'Tạo hóa đơn thành công',
     data: bill,
+  });
+});
+
+export const checkoutPreview = catchAsync(async (req: Request, res: Response) => {
+  const lodgeId = req.users?.lodge?._id?.toString();
+  const result = await roomService.checkoutPreview(req.params.id, req.body, lodgeId);
+  res.status(200).json({
+    success: true,
+    message: 'Xem trước quyết toán trả phòng thành công',
+    data: result,
+  });
+});
+
+export const checkoutComplete = catchAsync(async (req: Request, res: Response) => {
+  const lodgeId = req.users?.lodge?._id?.toString();
+  const result = await roomService.checkoutComplete(req.params.id, req.body, lodgeId);
+  res.status(200).json({
+    success: true,
+    message: 'Hoàn tất trả phòng thành công',
+    data: result,
   });
 });

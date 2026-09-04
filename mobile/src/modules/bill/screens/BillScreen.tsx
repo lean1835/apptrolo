@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS, SHADOWS } from '../../../styles/Theme';
 import { BackIcon, DownloadIcon, ShareIcon, AlertTriangleIcon } from '../../../assets/Icons';
@@ -15,9 +15,27 @@ interface Bill {
   id?: string;
   _id?: string;
   date: string;
+  periodStart?: string;
+  periodEnd?: string;
   total: number;
+  rent?: number;
+  elecOld?: number;
+  elecNew?: number;
+  elecUsage?: number;
+  elecPrice?: number;
+  elecAmount?: number;
+  waterOld?: number;
+  waterNew?: number;
+  waterUsage?: number;
+  waterPrice?: number;
+  waterAmount?: number;
+  wifiAmount?: number;
+  garbageAmount?: number;
+  prepaidDeduction?: number;
+  amountPaid?: number;
   collected: boolean;
   sent: boolean;
+  status?: string;
 }
 
 interface MeterReading {
@@ -245,75 +263,155 @@ const BillScreen: React.FC = () => {
     const eUse = Math.max(0, cElec - pElecValue);
     const wUse = Math.max(0, cWater - pWaterValue);
     
+    if (currentBill) {
+      return {
+        eUse: currentBill.elecUsage ?? 0,
+        wUse: currentBill.waterUsage ?? 0,
+        eAmt: currentBill.elecAmount ?? 0,
+        wAmt: currentBill.waterAmount ?? 0,
+        total: currentBill.total ?? 0,
+        rent: currentBill.rent ?? 0,
+        prepaid: currentBill.prepaidDeduction ?? 0,
+        fees: (currentBill.wifiAmount || 0) + (currentBill.garbageAmount || 0),
+        cElec: currentBill.elecNew ?? 0,
+        cWater: currentBill.waterNew ?? 0,
+        pElecValue: currentBill.elecOld ?? 0,
+        pWaterValue: currentBill.waterOld ?? 0,
+        debtMonths: 1
+      };
+    }
+
     const eAmt = eUse * (prices.elec || 0);
     const rent = parseFloat(room.price as string) || 0;
     const fees = (prices.wifi || 0) + (prices.garbage || 0);
     const wAmt = prices.waterMode === 'fixed' ? (prices.waterFixed || 0) : (wUse * (prices.water || 0));
     const prepaid = room.contractPrepaid > 0 ? rent : 0;
     
-    // Calculate total cumulatively
-    const total = rent * debtMonths + eAmt + wAmt * (prices.waterMode === 'fixed' ? debtMonths : 1) + fees * debtMonths - prepaid * debtMonths;
+    // Calculate total
+    const total = rent + eAmt + wAmt + fees - prepaid;
 
-    return { eUse, wUse, eAmt, wAmt, total, rent, prepaid, fees, cElec, cWater, pElecValue, pWaterValue, debtMonths };
+    return { eUse, wUse, eAmt, wAmt, total, rent, prepaid, fees, cElec, cWater, pElecValue, pWaterValue, debtMonths: 1 };
   }, [room, prices, targetMonth, targetYear]);
 
-  // 3. Calculate Debt Info
-  const debtMonths = stats.debtMonths;
-  const priorDebt = 0;
-  const finalTotal = stats.total;
+  // 3. Calculate Debt Info & Find Current Bill
+  const currentBill = useMemo(() => {
+    if (!room || !room.bills || room.bills.length === 0) return null;
+    const found = room.bills.find(b => {
+      const parts = (b.date || '').split('-');
+      return parseInt(parts[0], 10) === targetYear && parseInt(parts[1], 10) === (targetMonth + 1);
+    });
+    return found || room.bills[room.bills.length - 1];
+  }, [room, targetMonth, targetYear]);
 
-  // 4. Calculate bank and QR URL (Bọc useMemo để tối ưu hóa hiệu năng)
+  const debtMonths = stats.debtMonths;
+  const billTotal = currentBill?.total !== undefined ? Number(currentBill.total) : stats.total;
+  const amountPaid = currentBill?.amountPaid !== undefined ? Number(currentBill.amountPaid) : (currentBill?.collected ? billTotal : 0);
+  const remainingAmount = Math.max(0, billTotal - amountPaid);
+  const isPaid = amountPaid >= billTotal && billTotal > 0;
+  const isPartial = amountPaid > 0 && amountPaid < billTotal;
+
+  // 4. Calculate bank and QR URL using remainingAmount
   const qrUrl = useMemo(() => {
     if (!lodge || !room) return '';
     const bankNameFormatted = (lodge.bankName || '').replace(/\s+/g, '');
     if (lodge.bankName && lodge.bank) {
-      return `https://img.vietqr.io/image/${bankNameFormatted}-${lodge.bank}-qr_only.png?amount=${finalTotal}&addInfo=${encodeURIComponent(room.name + ' Thang ' + (targetMonth + 1))}&accountName=${encodeURIComponent(lodge.name || '')}`;
+      const qrAmount = remainingAmount > 0 ? remainingAmount : billTotal;
+      return `https://img.vietqr.io/image/${bankNameFormatted}-${lodge.bank}-qr_only.png?amount=${qrAmount}&addInfo=${encodeURIComponent(room.name + ' Thang ' + (targetMonth + 1))}&accountName=${encodeURIComponent(lodge.name || '')}`;
     }
     return '';
-  }, [lodge, room, finalTotal, targetMonth]);
+  }, [lodge, room, remainingAmount, billTotal, targetMonth]);
 
-  // 5. Actions (Bọc useCallback để tối ưu hóa hiệu năng)
+  // Collect Payment Modal state
+  const [showCollectModal, setShowCollectModal] = useState(false);
+  const [collectInput, setCollectInput] = useState('');
+  const [collecting, setCollecting] = useState(false);
+
+  const handleOpenCollect = () => {
+    setCollectInput(remainingAmount.toString());
+    setShowCollectModal(true);
+  };
+
+  const handleConfirmCollect = async () => {
+    const inputVal = parseFloat(collectInput.replace(/\D/g, '')) || 0;
+    if (inputVal <= 0) {
+      Alert.alert("Lỗi", "Vui lòng nhập số tiền thu hợp lệ");
+      return;
+    }
+    if (inputVal > remainingAmount) {
+      Alert.alert("Cảnh báo", `Số tiền thu (${inputVal.toLocaleString('vi')} đ) không được vượt quá số còn thiếu (${remainingAmount.toLocaleString('vi')} đ).`);
+      return;
+    }
+
+    setCollecting(true);
+    try {
+      const targetBillId = currentBill?.id || currentBill?._id;
+      if (targetBillId) {
+        await axiosInstance.put(`/bills/${targetBillId}`, {
+          amountPaid: amountPaid + inputVal,
+        });
+      } else {
+        await axiosInstance.post(`/rooms/${id}/bills`, {
+          total: billTotal,
+          amountPaid: inputVal,
+          date: new Date().toISOString().split('T')[0],
+          sent: true,
+          collected: inputVal >= billTotal,
+        });
+      }
+      
+      Alert.alert("Thành công", `Đã ghi nhận thu ${inputVal.toLocaleString('vi')} đ!`);
+      setShowCollectModal(false);
+      // Refresh room and bill data
+      const resRoom = await axiosInstance.get(`/rooms/${id}?t=${new Date().getTime()}`);
+      setRoom(resRoom.data);
+    } catch (err: any) {
+      Alert.alert("Lỗi", "Không thể thu tiền: " + (err.response?.data?.message || err.message));
+    } finally {
+      setCollecting(false);
+    }
+  };
+
+  const handleDeleteBill = () => {
+    if (!currentBill) return;
+    if (amountPaid > 0) {
+      Alert.alert("Không thể xóa", "Không thể xóa hóa đơn đã phát sinh dòng tiền thu.");
+      return;
+    }
+
+    Alert.alert(
+      "Xác nhận xóa hóa đơn",
+      `Bạn có chắc chắn muốn xóa hóa đơn này? Thao tác này sẽ xóa hóa đơn kèm chỉ số điện nước của kỳ, phòng sẽ trở về ngăn 'Chưa chốt'.`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const targetBillId = currentBill.id || currentBill._id;
+              await axiosInstance.delete(`/bills/${targetBillId}`);
+              Alert.alert("Thành công", "Đã xóa hóa đơn. Phòng đã chuyển về ngăn Chưa chốt.");
+              router.back();
+            } catch (err: any) {
+              Alert.alert("Lỗi", "Không thể xóa hóa đơn: " + (err.response?.data?.message || err.message));
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // 5. Actions
   const markBillAsSent = useCallback(async () => {
     if (!room) return;
     try {
-      const thisMonthBill = (room.bills || []).find(b => {
-        const billDate = new Date(b.date);
-        return billDate.getMonth() === now.getMonth() && billDate.getFullYear() === now.getFullYear();
-      });
-
-      if (thisMonthBill) {
-        await axiosInstance.put(`/bills/${thisMonthBill.id || thisMonthBill._id}`, { sent: true });
-      } else {
-        await axiosInstance.post(`/rooms/${id}/bills`, {
-          total: stats.total,
-          date: now.toISOString().split('T')[0],
-          sent: true,
-          collected: false
-        });
+      if (currentBill) {
+        await axiosInstance.put(`/bills/${currentBill.id || currentBill._id}`, { sent: true });
       }
     } catch (err) {
       console.error('Failed to mark bill as sent:', err);
     }
-  }, [room, now, id, stats.total]);
-
-  const handleSaveBill = useCallback(async () => {
-    setSaving(true);
-    try {
-      await axiosInstance.post(`/rooms/${id}/bills`, {
-        total: stats.total,
-        date: new Date().toISOString().split('T')[0],
-        sent: false,
-        collected: false
-      });
-      Alert.alert(t('success'), t('billSaveSystemSuccess'), [
-        { text: "OK", onPress: () => router.push('/' as any) }
-      ]);
-    } catch (err) {
-      Alert.alert(t('error'), t('billSaveSystemFailed'));
-    } finally {
-      setSaving(false);
-    }
-  }, [id, stats.total, router, t]);
+  }, [room, currentBill]);
 
   const handleCapture = useCallback(async () => {
     try {
@@ -381,7 +479,6 @@ const BillScreen: React.FC = () => {
         </TouchableOpacity>
         <Text style={styles.tbtitle}>{t('invoice')} · {room.name}</Text>
         
-        {/* Premium bilingual switch button on topbar */}
         <TouchableOpacity 
           style={styles.langBtn} 
           onPress={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
@@ -406,7 +503,7 @@ const BillScreen: React.FC = () => {
             <View style={styles.receiptPaper}>
               {/* Header */}
               <View style={styles.billHeader}>
-                <Text style={styles.bhLodge}>{lodge.name || 'RentHub'}</Text>
+                <Text style={styles.bhLodge}>{lodge.name || 'Nhà trọ'}</Text>
                 <Text style={styles.bhTitle}>{t('invoiceTitle')}</Text>
                 <View style={styles.bhRow}>
                   <Text style={styles.bhRoom}>{t('room')}: {room.name}</Text>
@@ -417,12 +514,15 @@ const BillScreen: React.FC = () => {
 
               <View style={styles.dashLine} />
 
-              {/* QR Section */}
+              {/* QR Section (Uses remainingAmount) */}
               {!!qrUrl && (
                 <View style={styles.qrSection}>
                   <View style={styles.qrBox}>
                     <Image source={{ uri: qrUrl }} style={styles.qrBig} />
                   </View>
+                  <Text style={{ fontSize: 10, color: COLORS.g3, marginTop: 4, fontWeight: '700' }}>
+                    Quét mã VietQR để thanh toán {remainingAmount > 0 ? remainingAmount.toLocaleString('vi') : billTotal.toLocaleString('vi')} đ
+                  </Text>
                 </View>
               )}
 
@@ -448,10 +548,22 @@ const BillScreen: React.FC = () => {
 
               <View style={styles.dashLine} />
 
-              {/* Total Amount */}
+              {/* Total Amount & Payment Breakdown */}
               <View style={styles.totalSection}>
                 <Text style={[styles.tcLbl, { color: '#64748b' }]}>{t('totalDue')}</Text>
-                <Text style={[styles.tcVal, { color: COLORS.pr }]}>{finalTotal.toLocaleString('vi')} đ</Text>
+                <Text style={[styles.tcVal, { color: COLORS.pr }]}>{billTotal.toLocaleString('vi')} đ</Text>
+                {amountPaid > 0 && (
+                  <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
+                    <Text style={{ fontSize: 12, color: '#16a34a', fontWeight: '800' }}>
+                      Đã thu: {amountPaid.toLocaleString('vi')} đ
+                    </Text>
+                    {remainingAmount > 0 && (
+                      <Text style={{ fontSize: 12, color: '#e11d48', fontWeight: '800' }}>
+                        Còn thiếu: {remainingAmount.toLocaleString('vi')} đ
+                      </Text>
+                    )}
+                  </View>
+                )}
                 <Text style={[styles.tcDate, { color: '#94a3b8' }]}>{t('dueDate')}: {formattedExpectedDate}</Text>
               </View>
 
@@ -525,7 +637,44 @@ const BillScreen: React.FC = () => {
           </View>
         </CaptureView>
 
-        <View style={[styles.brow, { marginTop: 20 }]}>
+        {/* 3 Lock Levels Action Buttons */}
+        {isPaid ? (
+          <View style={{ backgroundColor: '#dcfce7', borderRadius: 14, padding: 14, alignItems: 'center', marginTop: 15 }}>
+            <Text style={{ color: '#15803d', fontWeight: '900', fontSize: 14 }}>✓ HÓA ĐƠN ĐÃ THU ĐỦ · ĐÃ KHÓA</Text>
+            <Text style={{ color: '#166534', fontSize: 11, marginTop: 2 }}>Không thể sửa hoặc xóa khi đã hoàn tất thanh toán</Text>
+          </View>
+        ) : (
+          <View style={{ marginTop: 15, gap: 10 }}>
+            {/* Primary Action Button: Thu tiền / Thu tiếp */}
+            <Button 
+              title={isPartial ? `Thu tiếp (Còn thiếu ${remainingAmount.toLocaleString('vi')} đ)` : "Thu tiền phòng"} 
+              type="primary" 
+              onPress={handleOpenCollect} 
+              full 
+            />
+
+            <View style={styles.brow}>
+              <Button 
+                title="Sửa chỉ số" 
+                type="secondary" 
+                onPress={() => router.push({ pathname: '/meter', params: { id: room.id || room._id } })}
+                full
+                style={{ flex: 1 }}
+              />
+              {!isPartial && (
+                <Button 
+                  title="Xóa bill" 
+                  type="rose" 
+                  onPress={handleDeleteBill} 
+                  full 
+                  style={{ flex: 1 }}
+                />
+              )}
+            </View>
+          </View>
+        )}
+
+        <View style={[styles.brow, { marginTop: 12 }]}>
           <Button 
             title={t('shareImage')} 
             type="sky" 
@@ -536,7 +685,7 @@ const BillScreen: React.FC = () => {
           />
           <Button 
             title={t('saveBillImage')} 
-            type="green"
+            type="green" 
             icon={DownloadIcon}
             onPress={handleCapture} 
             full 
@@ -546,6 +695,57 @@ const BillScreen: React.FC = () => {
         
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Collect Money Modal directly on BillScreen */}
+      <Modal
+        visible={showCollectModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCollectModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '100%', maxWidth: 400, ...SHADOWS.sh2 }}>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: COLORS.g1, marginBottom: 4 }}>
+              {isPartial ? "Thu tiếp tiền phòng" : "Thu tiền phòng"}
+            </Text>
+            <Text style={{ fontSize: 12, color: COLORS.g3, marginBottom: 15 }}>
+              Số tiền còn thiếu: {remainingAmount.toLocaleString('vi')} đ
+            </Text>
+
+            <Text style={{ fontSize: 11, fontWeight: '800', color: COLORS.g4, textTransform: 'uppercase', marginBottom: 6 }}>
+              Số tiền thực nhận (đ)
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 14, backgroundColor: '#f8fafc', marginBottom: 15 }}>
+              <TextInput 
+                style={{ flex: 1, height: 48, fontSize: 18, fontWeight: '900', color: COLORS.g1 }}
+                keyboardType="numeric"
+                value={collectInput}
+                onChangeText={setCollectInput}
+                placeholder="0"
+              />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.g4 }}>VNĐ</Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button 
+                title="Hủy" 
+                type="secondary" 
+                onPress={() => setShowCollectModal(false)} 
+                full 
+                style={{ flex: 1 }}
+              />
+              <Button 
+                title={collecting ? "Đang lưu..." : "Xác nhận thu"} 
+                type="primary" 
+                onPress={handleConfirmCollect} 
+                loading={collecting}
+                full 
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
